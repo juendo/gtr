@@ -1,51 +1,122 @@
-/* app css stylesheet */
-
-.menu {
-  list-style: none;
-  border-bottom: 0.1em solid black;
-  margin-bottom: 2em;
-  padding: 0 0 0.5em;
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    font-family: 'Montserrat';
 }
-
-.menu:before {
-  content: "[";
+img.hand {
+    height: 100%;
+    border-radius: 5%;
 }
-
-.menu:after {
-  content: "]";
+#fixed-container {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    margin: 0px;
 }
-
-.menu > li {
-  display: inline;
+.player-box {
+    width: 33.33333%;
+    height: 65%;
+    float: left;
+    position: relative;
 }
-
-.menu > li:before {
-  content: "|";
-  padding-right: 0.3em;
+.player-title {
+    width: 100%;
+    height: 10%;
+    position: relative;
+    z-index: 1;
+    background-color: white;
+    text-align: center;
+    box-shadow: 2px 0px 5px #AAA;
 }
-
-.menu > li:nth-child(1):before {
-  content: "";
-  padding: 0;
+.player-header {
+    width: 33.333%;
+    height: 100%;
+    float: left;
+    position: relative;
 }
-/* app css stylesheet */
-
-.overflowable {
-  height: 240px;
-  overflow-y: auto;
-  border: 1px solid #000;
+.player-actions {
+    display: block;
+    position: absolute;
+    bottom: 0px;
+    right: 0px
+    left: 0px;
+    margin-left: 5%;
+    width: 95%;
 }
-
-.overflowable p {
-  margin: 0;
+.player-action {
+    display:inline;
+    width: 100%;
+    text-align: center;
 }
-
-/* poor man's grid system */
-.col {
-  float: left;
-  width: 350px;
+.player-clientele, .player-clientele-shadow {
+    height: 100%;
+    width: 5%;
+    z-index: 2;
+    position: relative;
+    background-color: white;
+    float: left;
+    overflow: scroll;
 }
+.player-clientele-shadow {
+    box-shadow: 0px 0px 5px #AAA;
+    z-index: 0;
+    margin-right: -5%;
+}
+.client {
+    width: 100%;
+    height: auto;
+    float: left;
+    display: inline;
+}
+.player-building-area {
+    width: 20%;
+    height: auto;
+    display: inline-block;
+    padding: 1% 0 1% 1%;
+    margin: 0.8%;
+    margin-bottom: 3%;
+    z-index: 1;
+}
+.building {
+    width: 100%;
+    height: 100%;
+    border-radius: 5%;
+    box-shadow: 0px 0px 5px #AAA;
 
-.clr {
-  clear: both;
+}
+.materials-holder {
+    width:100%;padding:0px;height:10px
+}
+.materials {
+    box-shadow: 0px 0px 2px #999;
+    height:100%;background-color:white;margin-left:4%;
+}
+.material {
+    height:10px;float:left;
+}
+#bottom-bar {
+    width: 100%;
+    height: 25%;
+    background-color: #eedfe5;
+    clear: both;
+    box-shadow:2px 0px 5px #AAA;
+    position: relative;
+}
+.hand {
+    position:absolute; 
+    bottom:0; 
+}
+.pool-counter {
+    width: 50%;
+    height: 33.333%;
+    float: left;
+    text-align: center;
+    font-size: 30px;
+}
+.front {
+    z-index: 1;
+}
+#hand {
+    float:left; position: relative; height: 100%; display: block;
 }

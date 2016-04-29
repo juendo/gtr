@@ -1,1 +1,1 @@
-var app = angular.module('myApp', ['myApp.filters', 'myApp.directives']);
+var app = angular.module('myApp', ['myApp.filters', 'myApp.directives', 'ngDraggable']);
