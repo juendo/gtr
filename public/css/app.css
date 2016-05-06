@@ -15,7 +15,6 @@ img.hand {
     margin: 0px;
 }
 .player-box {
-    width: 33.33333%;
     height: 65%;
     float: left;
     position: relative;
@@ -30,7 +29,6 @@ img.hand {
     box-shadow: 2px 0px 5px #AAA;
 }
 .player-header {
-    width: 33.333%;
     height: 100%;
     float: left;
     position: relative;

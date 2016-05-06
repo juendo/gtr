@@ -38,7 +38,7 @@
         <div
         class           = 'player-box'
         ng-drop         = 'true'
-        ng-drop-success = 'layFoundation($data, $event)'
+        ng-drop-success = 'dragEnded($data, $event)'
         ng-repeat       = 'player in game.players'
         style           = 'background-color: #{{ player == game.players[currentPlayer] ? "aaddaa" : "ffefd5" }}'>
             <div 
@@ -58,7 +58,7 @@
                 <img 
                 class           = 'building'
                 ng-drop         = 'true'
-                ng-drop-success = 'fillStructure(building, $data, $event)'
+                ng-drop-success = 'dragEnded($data, $event, building)'
                 src             = 'images/cards/{{ building.name }}.png' 
                 alt             = '{{ building.name }}'
                 style           = '-webkit-filter: grayscale({{building.materials.length < colorValues[building.color] ? 0.75 : 0}});'/>
@@ -116,10 +116,10 @@
             style           = 'float:right;height:100%;width:15%;'>
                 <div
                 class           = 'pool-counter'
-                ng-repeat       = 'type in game.pool'
-                ng-click        = 'takeFromPool(type.color)'
-                style           = 'color:#{{ type.number > 0 ? colors[type.color] : "eedfe5"}}'>
-                    {{ type.number > 0 ? type.number : "" }}
+                ng-repeat       = 'color in Object.keys(game.pool)'
+                ng-click        = 'takeFromPool(color)'
+                style           = 'color:#{{ game.pool[color] > 0 ? colors[color] : "eedfe5"}}'>
+                    {{ number > 0 ? number : "" }}
                 </div>
             </div>
         </div>

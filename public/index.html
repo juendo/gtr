@@ -24,7 +24,8 @@
         class           = 'player-title'>
             <div
             class           = 'player-header'
-            ng-repeat       = 'player in game.players'>
+            ng-repeat       = 'player in game.players'
+            style           = 'width:{{100/game.players.length}}%;'>
                 Player (vault: {{ player.vault.length }})
                 <div
                 class           = 'player-actions'>
@@ -38,9 +39,9 @@
         <div
         class           = 'player-box'
         ng-drop         = 'true'
-        ng-drop-success = 'layFoundation($data, $event)'
+        ng-drop-success = 'dragEnded($data, $event)'
         ng-repeat       = 'player in game.players'
-        style           = 'background-color: #{{ player == game.players[currentPlayer] ? "aaddaa" : "ffefd5" }}'>
+        style           = 'background-color: #{{ player == game.players[currentPlayer] ? "aaddaa" : "ffefd5" }};width:{{100/game.players.length}}%;'>
             <div 
             class           = 'player-clientele-shadow'>
             </div>
@@ -58,7 +59,7 @@
                 <img 
                 class           = 'building'
                 ng-drop         = 'true'
-                ng-drop-success = 'fillStructure(building, $data, $event)'
+                ng-drop-success = 'dragEnded($data, $event, building)'
                 src             = 'images/cards/{{ building.name }}.png' 
                 alt             = '{{ building.name }}'
                 style           = '-webkit-filter: grayscale({{building.materials.length < colorValues[building.color] ? 0.75 : 0}});'/>
@@ -85,6 +86,7 @@
                 ng-drag-data    = '{index: $index, material: material}'
                 ng-drag-success = 'removeFromStockpile($data, $event)'
                 ng-repeat       = 'material in player.stockpile track by $index'
+                ng-click        = 'merchant({index: $index, material:material})'
                 style           = 'width:2%;height:100%;background-color:#{{ colors[material] }};float:right;border-style:solid;border-width:0 0 0 1px;border-color:#E3C9B3'>
                 </div>
             </div>
@@ -114,13 +116,13 @@
             <div
             class           = 'pool'
             style           = 'float:right;height:100%;width:15%;'>
-                <div
+                <button
                 class           = 'pool-counter'
-                ng-repeat       = 'type in game.pool'
-                ng-click        = 'takeFromPool(type.color)'
-                style           = 'color:#{{ type.number > 0 ? colors[type.color] : "eedfe5"}}'>
-                    {{ type.number > 0 ? type.number : "" }}
-                </div>
+                ng-repeat       = 'color in poolColors'
+                ng-click        = 'takeFromPool(color)'
+                style           = 'color:#{{ game.pool[color] > 0 ? colors[color] : "eedfe5"}}'>
+                    {{ game.pool[color] > 0 ? game.pool[color] : "" }}
+                </button>
             </div>
         </div>
     </div>
