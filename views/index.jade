@@ -1,0 +1,19 @@
+doctype html
+html
+  include ./includes/head.jade
+  body(
+    ng-app='myApp', 
+    ng-controller='gtrController as gtr'
+  )
+    .container(
+      ng-if='!started'
+    )
+      include ./includes/create_game.jade
+      include ./includes/setup_game.jade
+
+    #fixed-container(
+      ng-if='started',
+    )
+      include ./includes/players_header.jade
+      include ./includes/player_box.jade
+      include ./includes/bottom_bar.jade

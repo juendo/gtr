@@ -50,7 +50,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // serve index and view partials
 app.get('/', routes.index);
-app.get('/partials/:name', routes.partials);
+app.get('/game', routes.game);
 
 // JSON API
 app.get('/api/name', api.name);

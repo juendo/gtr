@@ -1,0 +1,28 @@
+#bottom-bar
+  #hand(
+    ng-hover-hand=''
+  )
+    img.hand(
+      ng-hover-card='', 
+      ng-drag='true', 
+      ng-drag-data='{index: $index, card: {name: c.name, color: c.color, done: false, materials: []}}', 
+      ng-drag-success='removeFromHand($data, $event)', 
+      ng-click='handClicked({index: $index, card: {name: c.name, color: c.color, done: false, materials: []}})', 
+      ng-repeat='c in game.players[you].hand track by $index', 
+      style='left: {{ $index * spacing }}px;', 
+      src='images/cards/{{ c.name }}.png', 
+      alt='{{ c.name }}'
+    )
+  .deck(
+    style='float:right;height:100%;width:10%;background-color:black;', 
+    ng-click='think()'
+  )
+  .pool(
+    style='float:right;height:100%;width:15%;'
+  )
+    button.pool-counter(
+      ng-repeat='color in poolColors', 
+      ng-click='takeFromPool(color)', 
+      style='color:#{{ game.pool[color] > 0 ? colors[color] : "eedfe5"}}'
+    )
+      | {{ game.pool[color] > 0 ? game.pool[color] : "" }}
