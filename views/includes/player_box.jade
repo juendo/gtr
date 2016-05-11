@@ -1,6 +1,4 @@
 .player-box(
-  ng-drop='true', 
-  ng-drop-success='dragEnded($data, $event)', 
   ng-repeat='player in game.players', 
   style='background-color: #{{ player == game.players[currentPlayer] ? "bbddbb" : "ffefd5" }};width:{{100/game.players.length}}%;'
 )
@@ -15,10 +13,10 @@
   )
     img.building(
       ng-drop='true', 
-      ng-drop-success='dragEnded($data, $event, building)', 
+      ng-drop-success='(currentPlayer == you && $parent.$index == you) ? dragEnded(game.players[you], $data, $event, building) : null', 
       src='images/cards/{{ building.name }}.png', 
       alt='{{ building.name }}', 
-      style='-webkit-filter: grayscale({{building.materials.length < colorValues[building.color] ? 0.75 : 0}});'
+      style='-webkit-filter: grayscale({{building.materials.length < colorValues[building.color] ? 0.6 : 0}});'
     )
     .materials-holder
       .materials(
@@ -33,7 +31,6 @@
     .stockpile-material(
       ng-drag='true', 
       ng-drag-data='{index: $index, material: material}', 
-      ng-drag-success='removeFromStockpile($data, $event)', 
       ng-repeat='material in player.stockpile track by $index', 
       ng-click='currentPlayer == you ? merchant(game.players[you], {index: $index, material: material}) : null', 
       style='background-color:#{{ colors[material] }}'
