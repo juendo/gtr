@@ -35,6 +35,6 @@
       ng-drag-data='{index: $index, material: material}', 
       ng-drag-success='removeFromStockpile($data, $event)', 
       ng-repeat='material in player.stockpile track by $index', 
-      ng-click='merchant({index: $index, material: material})', 
+      ng-click='currentPlayer == you ? merchant(game.players[you], {index: $index, material: material}) : null', 
       style='background-color:#{{ colors[material] }}'
     )

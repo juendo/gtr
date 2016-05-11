@@ -4,9 +4,6 @@ socket.emit('send:message', {
     });
     */
 
-
-
-    // make it only accept input if it is YOUR turn
 app.controller('gtrController', function($scope, socket) {
 
   socket.on('change', function (data) {
@@ -70,14 +67,14 @@ app.controller('gtrController', function($scope, socket) {
 
     return array;
   }
-
-  $scope.game.deck = shuffle([{name: 'Academy', color: 'red'},{name: 'Amphitheatre', color: 'grey'},{name: 'Aqueduct', color: 'grey'},{name: 'Archway', color: 'red'},{name: 'Atrium', color: 'red'},{name: 'Bar', color: 'yellow'},{name: 'Basilica', color: 'purple'},{name: 'Bath', color: 'red'},{name: 'Bridge', color: 'grey'},{name: 'Catacomb', color: 'blue'},{name: 'CircusMaximus', color: 'blue'},{name: 'Crane', color: 'green'},{name: 'Dock', color: 'green'},{name: 'DomusAurea', color: 'blue'},{name: 'ForumRomanum', color: 'purple'},{name: 'Foundry', color: 'red'},{name: 'Fountain', color: 'purple'},{name: 'Academy', color: 'red'},{name: 'Amphitheatre', color: 'grey'},{name: 'Aqueduct', color: 'grey'},{name: 'Archway', color: 'red'},{name: 'Atrium', color: 'red'},{name: 'Bar', color: 'yellow'},{name: 'Basilica', color: 'purple'},{name: 'Bath', color: 'red'},{name: 'Bridge', color: 'grey'},{name: 'Catacomb', color: 'blue'},{name: 'CircusMaximus', color: 'blue'},{name: 'Crane', color: 'green'},{name: 'Dock', color: 'green'},{name: 'DomusAurea', color: 'blue'},{name: 'ForumRomanum', color: 'purple'},{name: 'Foundry', color: 'red'},{name: 'Fountain', color: 'purple'},{name: 'Academy', color: 'red'},{name: 'Amphitheatre', color: 'grey'},{name: 'Aqueduct', color: 'grey'},{name: 'Archway', color: 'red'},{name: 'Atrium', color: 'red'},{name: 'Bar', color: 'yellow'},{name: 'Basilica', color: 'purple'},{name: 'Bath', color: 'red'},{name: 'Bridge', color: 'grey'},{name: 'Catacomb', color: 'blue'},{name: 'CircusMaximus', color: 'blue'},{name: 'Crane', color: 'green'},{name: 'Dock', color: 'green'},{name: 'DomusAurea', color: 'blue'},{name: 'ForumRomanum', color: 'purple'},{name: 'Foundry', color: 'red'},{name: 'Fountain', color: 'purple'}]);
+  var cards = [{name: 'Academy', color: 'red'},{name: 'Amphitheatre', color: 'grey'},{name: 'Aqueduct', color: 'grey'},{name: 'Archway', color: 'red'},{name: 'Atrium', color: 'red'},{name: 'Bar', color: 'yellow'},{name: 'Bar', color: 'yellow'},{name: 'Basilica', color: 'purple'},{name: 'Bath', color: 'red'},{name: 'Bridge', color: 'grey'},{name: 'Catacomb', color: 'blue'},{name: 'CircusMaximus', color: 'blue'},{name: 'Crane', color: 'green'},{name: 'Crane', color: 'green'},{name: 'Dock', color: 'green'},{name: 'Dock', color: 'green'},{name: 'DomusAurea', color: 'blue'},{name: 'ForumRomanum', color: 'purple'},{name: 'Foundry', color: 'red'},{name: 'Fountain', color: 'purple'},{name: 'Garden', color: 'blue'},{name: 'Gate', color: 'red'},{name: 'Insula', color: 'yellow'},{name: 'Insula', color: 'yellow'},{name: 'Latrine', color: 'yellow'},{name: 'Latrine', color: 'yellow'},{name: 'LudusMagnus', color: 'purple'},{name: 'Market', color: 'green'},{name: 'Market', color: 'green'},{name: 'Palace', color: 'purple'},{name: 'Palisade', color: 'green'},{name: 'Palisade', color: 'green'},{name: 'Prison', color: 'blue'},{name: 'Road', color: 'yellow'},{name: 'Road', color: 'yellow'},{name: 'School', color: 'red'},{name: 'Scriptorium', color: 'blue'},{name: 'Sewer', color: 'blue'},{name: 'Shrine', color: 'red'},{name: 'Stairway', color: 'purple'},{name: 'Statue', color: 'purple'},{name: 'Storeroom', color: 'grey'},{name: 'Temple', color: 'purple'},{name: 'Tower', color: 'grey'},{name: 'Tribunal', color: 'grey'},{name: 'Villa', color: 'blue'},{name: 'Vomitorium', color: 'grey'},{name: 'Wall', color: 'grey'}];
+  $scope.game.deck = shuffle(cards.concat(cards).concat(cards));
 
   romeDemands = function(data, player, action) {
     if (data.card.color == action.material) {
       player.hand.splice(data.index, 1);
       $scope.game.players[action.demander].stockpile.push(data.card.color);
-      useAction();
+      useAction(player);
     }
   }
 
@@ -92,7 +89,7 @@ app.controller('gtrController', function($scope, socket) {
         $scope.game.players[i].actions.splice(0, 0, {kind:'Rome Demands', description:'ROME DEMANDS ' + $scope.materials[data.card.color].toUpperCase(), demander: $scope.currentPlayer, material: data.card.color})
       }
     }
-    useAction();
+    useAction(player);
   }
 
   lead = function(data, player, action) {
@@ -106,7 +103,7 @@ app.controller('gtrController', function($scope, socket) {
         addClientActions($scope.game.players[i], data.card.color);
       }
     }
-    useAction();
+    useAction(player);
   }
 
   addClientActions = function(player, color) {
@@ -122,77 +119,61 @@ app.controller('gtrController', function($scope, socket) {
       player.hand.splice(data.index, 1);
       player.actions.push({kind: $scope.roles[data.card.color], description: $scope.roles[data.card.color].toUpperCase()});
       player.pending.push(data.card.color);
-      useAction();
+      useAction(player);
     } 
   }
 
-  $scope.merchant = function(data) {
-    if ($scope.currentPlayer != $scope.you) {
-      return;
-    }
-    var action = $scope.game.players[$scope.you].actions[0];
+  $scope.merchant = function(player, data) {
+    var action = player.actions[0];
     if (action != undefined && action.kind == 'Merchant') {
-      $scope.game.players[$scope.you].vault.push(data.material);
-      $scope.game.players[$scope.you].stockpile.splice(data.index, 1);
-      useAction();
+      player.vault.push(data.material);
+      player.stockpile.splice(data.index, 1);
+      useAction(player);
     }
   }
 
-  $scope.think = function() {
+  $scope.think = function(player, deck) {
 
-    console.log($scope.you);
-    console.log($scope.currentPlayer);
-    if ($scope.currentPlayer != $scope.you) {
-      return;
-    }
-    console.log('here');
-    var action = $scope.game.players[$scope.you].actions[0];
-    console.log(action);
+    var action = player.actions[0];
     if (action != undefined && (action.kind == 'Lead' || action.kind == 'Follow')) {
-      $scope.game.players[$scope.you].hand.push($scope.game.deck.pop());
-      while ($scope.game.players[$scope.you].hand.length < 5) {
-        $scope.game.players[$scope.you].hand.push($scope.game.deck.pop());
+      player.hand.push(deck.pop());
+      while (player.hand.length < 5) {
+        player.hand.push(deck.pop());
       }
     }
-    console.log('going to yse actio');
-    useAction();
+    useAction(player);
   }
 
-  $scope.handClicked = function(data) {
-    if ($scope.currentPlayer != $scope.you) {
-      return;
-    }
-    var action = $scope.game.players[$scope.you].actions[0];
+  $scope.handClicked = function(player, data) {
+
+    var action = player.actions[0];
     if (action == undefined) {
-      return
+      return;
     } else if (action.kind == 'Rome Demands') {
-      romeDemands(data,$scope.game.players[$scope.you], action);
+      romeDemands(data, player, action);
     } else if (action.kind == 'Legionary') {
-      legionary(data,$scope.game.players[$scope.you], action);
+      legionary(data, player, action);
     } else if (action.kind == 'Lead') {
-      lead(data,$scope.game.players[$scope.you], action);
+      lead(data, player, action);
     } else if (action.kind == 'Follow') {
-      follow(data,$scope.game.players[$scope.you], action);
+      follow(data, player, action);
     }
   }
 
-  $scope.takeFromPool = function(color) {
-    if ($scope.currentPlayer != $scope.you) {
-      return;
-    }
-    var action = $scope.game.players[$scope.you].actions[0];
-    console.log('pool');
-    if (action == undefined || $scope.game.pool[color] <= 0) {
+  $scope.takeFromPool = function(player, pool, color) {
+
+    var action = player.actions[0];
+    if (action == undefined || pool[color] <= 0) {
       return;
     } else if (action.kind == 'Patron') {
-      $scope.game.players[$scope.you].clientele.push($scope.roles[color]);
+      player.clientele.push($scope.roles[color]);
     } else if (action.kind == 'Laborer') {
-      $scope.game.players[$scope.you].stockpile.push(color);
+      player.stockpile.push(color);
     } else {
       return;
     }
-    $scope.game.pool[color]--;
-    useAction();
+    pool[color]--;
+    useAction(player);
   }
 
   update = function() {
@@ -235,16 +216,11 @@ app.controller('gtrController', function($scope, socket) {
   }
 
   // uses action of current player and determines who is to act next
-  useAction = function() {
+  useAction = function(player) {
     // spend action of current player
-    if ($scope.currentPlayer != $scope.you) {
-      return;
-    }
-    var action = $scope.game.players[$scope.you].actions[0];
-    console.log($scope.game.players[$scope.you].actions);
-    $scope.game.players[$scope.you].actions.shift();
-    console.log($scope.game.players[$scope.you].actions);
-    var newAction = $scope.game.players[$scope.you].actions[0];
+    var action = player.actions[0];
+    player.actions.shift();
+    var newAction = player.actions[0];
 
     // if the player has no actions left, find next player to act
     if (newAction == undefined) {
@@ -294,7 +270,7 @@ app.controller('gtrController', function($scope, socket) {
       // if the draggable was a card
       if (data.card) {
         $scope.game.players[$scope.you].buildings.push(data.card);
-        useAction();
+        useAction($scope.game.players[$scope.you]);
       }
       // if it was a material, return it to the stockpile
       else if (data.material) {
@@ -308,7 +284,7 @@ app.controller('gtrController', function($scope, socket) {
         // if they have a craftsman action fill structure
         if (action.kind == 'Craftsman') {
           structure.materials.push(data.card.color);
-          useAction();
+          useAction($scope.game.players[$scope.you]);
         } 
         // otherwise return it to hand
         else {
@@ -321,7 +297,7 @@ app.controller('gtrController', function($scope, socket) {
         if (action.kind == 'Architect') {
           // add material to structure
           structure.materials.push(data.material);
-          useAction();
+          useAction($scope.game.players[$scope.you]);
         } else {
           // otherwise return to stockpile
           data.stockpile.push(data.material);
