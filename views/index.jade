@@ -6,13 +6,13 @@ html
     ng-controller='gtrController as gtr'
   )
     .container(
-      ng-if='!started'
+      ng-if='!meta.started'
     )
       include ./includes/create_game.jade
       include ./includes/setup_game.jade
 
     #fixed-container(
-      ng-if='started',
+      ng-if='meta.started',
     )
       include ./includes/players_header.jade
       include ./includes/player_box.jade

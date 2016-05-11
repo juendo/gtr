@@ -3,7 +3,7 @@
     ng-repeat='player in game.players', 
     style='width:{{100/game.players.length}}%;'
   )
-    | vault: {{ player.vault.length }}
+    | {{ player.name }}, vault: {{ player.vault.length }}
     .player-actions
       .player-action
         | {{ player.actions[0].description }}

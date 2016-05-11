@@ -1,6 +1,6 @@
 .player-box(
   ng-repeat='player in game.players', 
-  style='background-color: #{{ player == game.players[currentPlayer] ? "bbddbb" : "ffefd5" }};width:{{100/game.players.length}}%;'
+  style='background-color: #{{ player == game.players[meta.currentPlayer] ? "bbddbb" : "ffefd5" }};width:{{100/game.players.length}}%;'
 )
   .player-clientele-shadow
   .player-clientele
@@ -13,7 +13,7 @@
   )
     img.building(
       ng-drop='true', 
-      ng-drop-success='(currentPlayer == you && $parent.$index == you) ? dragEnded(game.players[you], $data, $event, building) : null', 
+      ng-drop-success='(meta.currentPlayer == meta.you && $parent.$index == meta.you) ? dragEnded(game.players[meta.you], $data, $event, building, game, meta) : null', 
       src='images/cards/{{ building.name }}.png', 
       alt='{{ building.name }}', 
       style='-webkit-filter: grayscale({{building.materials.length < colorValues[building.color] ? 0.6 : 0}});'
@@ -32,6 +32,6 @@
       ng-drag='true', 
       ng-drag-data='{index: $index, material: material}', 
       ng-repeat='material in player.stockpile track by $index', 
-      ng-click='currentPlayer == you ? merchant(game.players[you], {index: $index, material: material}) : null', 
+      ng-click='meta.currentPlayer == meta.you ? stockpileClicked(game.players[meta.you], {index: $index, material: material}, game, meta) : null', 
       style='background-color:#{{ colors[material] }}'
     )

@@ -1,5 +1,5 @@
 .row(
-  ng-if='created'
+  ng-if='meta.created'
 )
   .Absolute-Center.is-Responsive
     .col-sm-12.col-md-10.col-md-offset-1
@@ -11,7 +11,7 @@
       .form-group.game-button
         button.btn.btn-def.btn-block(
           type='button', 
-          ng-click='start()'
+          ng-click='start(meta, game)'
         )
           | Start Game
       .form-group.game-button
