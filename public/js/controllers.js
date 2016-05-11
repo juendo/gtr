@@ -10,6 +10,7 @@ app.controller('gtrController', function($scope, socket) {
 
   // message received indicating that another player has acted
   socket.on('change', function (data) {
+    console.log(data);
     $scope.meta.started = true;
     $scope.game = data.game;
     $scope.meta.leader = data.leader;
@@ -52,6 +53,7 @@ app.controller('gtrController', function($scope, socket) {
 
   // when start game is pressed
   $scope.start = function(meta, game) {
+    console.log('start');
     meta.started = true;
     for (var i = 0; i < game.players.length; i++) {
       game.pool[game.deck.pop().color]++;
@@ -62,6 +64,7 @@ app.controller('gtrController', function($scope, socket) {
     meta.leader = Math.floor(Math.random() * (game.players.length));
     meta.currentPlayer = meta.leader;
     game.players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
+    console.log(game);
     update();
   }
 
@@ -84,7 +87,7 @@ app.controller('gtrController', function($scope, socket) {
   isDragging = false;
 
   // the game state
-  $scope.game = {players:[{name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}],pool:{'yellow':0,'green':0,'red':0,'grey':0,'purple':0,'blue':0},deck:[]};
+  $scope.game = {players:[{name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}],pool:{'yellow':0,'green':0,'red':0,'grey':0,'purple':0,'blue':0,'black':6},deck:[]};
 
   $scope.meta = { started: false, created: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" };
 
@@ -107,18 +110,19 @@ app.controller('gtrController', function($scope, socket) {
   // the deck is 3 lots of the above cards, shuffled
   $scope.game.deck = shuffle(cards.concat(cards).concat(cards));
 
-  // USER INPUT FUNCTIONS ------------------------------------------------------------------------------------
-
-  // called when the deck is clicked (and you are the current player)
-  $scope.deckClicked = function(player, game, meta) {
-
-    var action = player.actions[0];
-    var acted = false;
-    if (action != undefined && (action.kind == 'Lead' || action.kind == 'Follow')) {
-      acted = think(player, game.deck);
-    }
-    if (acted) useAction(player, game, meta);
+  $scope.yourTurn = function() {
+    return $scope.meta.currentPlayer == $scope.meta.you;
   }
+
+  $scope.you = function() {
+    return $scope.game.players[$scope.meta.you];
+  }
+
+  // USER INPUT FUNCTIONS ------------------------------------------------------------------------------------
+  // in general these will check if you have a suitable action to perform, and then attempt to perform that action
+  // each action return true or false depending on whether or not it worked
+  // then if an action was performed useAction will be called
+
 
   // called when a card in your hand is clicked
   $scope.handClicked = function(player, game, meta, data) {
@@ -131,31 +135,62 @@ app.controller('gtrController', function($scope, socket) {
     else {
       if (action == undefined) {
         return;
-      } else if (action.kind == 'Rome Demands') {
+      } 
+      else if (action.kind == 'Rome Demands' && data.card.name != 'Jack') {
         acted = romeDemands(player, game, meta, data, action);
-      } else if (action.kind == 'Legionary') {
+      } 
+      else if (action.kind == 'Legionary' && data.card.name != 'Jack') {
         acted = legionary(player, game, meta, data, action);
-      } else if (action.kind == 'Lead') {
+      } 
+      else if (action.kind == 'Lead') {
         acted = lead(player, game, meta, data, action);
-      } else if (action.kind == 'Follow') {
+      } 
+      else if (action.kind == 'Follow') {
         acted = follow(player, game, meta, data, action);
-      } else if (action.kind == 'Craftsman'
-              || action.kind == 'Architect') {
+      } 
+      else if ((action.kind == 'Craftsman'
+              || action.kind == 'Architect')
+              && data.card.name != 'Jack') {
         acted = layFoundation(player, game, meta, data, action);
       }
       if (acted) useAction(player, game, meta);
     }   
   }
 
-  // called when a drag ends (over a structure or a player box)
+  // called when the deck is clicked (and you are the current player)
+  $scope.deckClicked = function(player, game, meta) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && 
+          (action.kind == 'Lead' || action.kind == 'Follow')) {
+      acted = think(player, game.deck);
+    }
+
+    if (acted) useAction(player, game, meta);
+  }
+
+  $scope.jackClicked = function(player, game, meta) {
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && 
+          (action.kind == 'Lead' || action.kind == 'Follow')) {
+      acted = takeJack(player, game);
+    }
+
+    if (acted) useAction(player, game, meta);
+  }
+
+  // called when a drag ends over a structure
   $scope.dragEnded = function(player, data, evt, structure, game, meta) {
-    // we need to check if the drag ended over the player box
-    // or over a building, and what type of draggable it was
 
     var action = player.actions[0];
     var acted = false;
 
     if (isDragging) isDragging = false;
+
     if (action == undefined || 
         (player.actions[0].kind != 'Craftsman' &&
          player.actions[0].kind != 'Architect')) {
@@ -167,7 +202,8 @@ app.controller('gtrController', function($scope, socket) {
       } else {
         player.hand.push(data.card);
       }
-    } else if (data.material && action.kind == 'Architect') {
+    } 
+    else if (data.material && action.kind == 'Architect') {
       acted = fillStructureFromStockpile(structure, player, data);
     }
     if (acted) useAction(player, game, meta);
@@ -178,23 +214,30 @@ app.controller('gtrController', function($scope, socket) {
 
     var action = player.actions[0];
     var acted = false;
+
     if (action == undefined || game.pool[color] <= 0) {
       return;
-    } else if (action.kind == 'Patron') {
-      acted = patron(player, color, game.pool);
-    } else if (action.kind == 'Laborer') {
-      acted = laborer(player, color, game.pool);
     } 
+    else if (action.kind == 'Patron') {
+      acted = patron(player, color, game.pool);
+    } 
+    else if (action.kind == 'Laborer') {
+      acted = laborer(player, color, game.pool);
+    }
+
     if (acted) useAction(player, game, meta);
   }
 
   // called when a material in your stockpile is clicked
   $scope.stockpileClicked = function(player, data, game, meta) {
+
     var action = player.actions[0];
     var acted = false;
+
     if (action != undefined && action.kind == 'Merchant') {
       acted = merchant(player, data);
     }
+
     if (acted) useAction(player, game, meta);
   }
 
@@ -205,6 +248,7 @@ app.controller('gtrController', function($scope, socket) {
 
 
   // GAME ACTIONS -------------------------------------------------------------------------------------------------------
+  // these each return a boolean indicating whether or not an action has been performed
 
   // when clicking a card in hand in response to a rome demands
   romeDemands = function(player, game, meta, data, action) {
@@ -234,6 +278,8 @@ app.controller('gtrController', function($scope, socket) {
 
   // when clicking a card in hand and you are to lead
   lead = function(player, game, meta, data, action) {
+
+    // deal with case where card is a jack
     var color = data.card.color;
     player.hand.splice(data.index, 1);
     player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
@@ -250,10 +296,11 @@ app.controller('gtrController', function($scope, socket) {
 
   // when clicking a card in hand and you are to follow
   follow = function(player, game, meta, data, action) {
+
     var color = data.card.color;
-    if (action.material == color) {
+    if (action.color == color || data.card.name == 'Jack') {
       player.hand.splice(data.index, 1);
-      player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
+      player.actions.push({kind: roles[action.color], description: roles[action.color].toUpperCase()});
       player.pending.push(color);
       return true;
     } else {
@@ -273,6 +320,16 @@ app.controller('gtrController', function($scope, socket) {
       player.hand.push(deck.pop());
     }
     return true;
+  }
+
+  takeJack = function(player, game) {
+    if (game.pool.black > 0) {
+      player.hand.push({name: 'Jack', color: 'black'});
+      game.pool.black--;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   patron = function(player, color, pool) {
@@ -305,6 +362,8 @@ app.controller('gtrController', function($scope, socket) {
     return true;
   }
 
+  // META ACTIONS ---------------------------------------------------------------------------------------------------
+
   // adds actions for clients
   addClientActions = function(player, color) {
     player.clientele.forEach(function(client) {
@@ -313,8 +372,6 @@ app.controller('gtrController', function($scope, socket) {
       }
     }, this);
   }
-
-  // META ACTIONS ---------------------------------------------------------------------------------------------------
 
   // uses action of current player and determines who is to act next
   useAction = function(player, game, meta) {

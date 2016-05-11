@@ -9,9 +9,9 @@
       ng-drag-data=
         '{index: $index, card: {name: c.name, color: c.color, done: false, materials: []}}', 
       ng-click=
-        'meta.currentPlayer == meta.you ? handClicked(game.players[meta.you], game, meta, {index: $index, card: {name: c.name, color: c.color, done: false, materials: []}}) : null', 
+        'yourTurn() ? handClicked(you(), game, meta, {index: $index, card: {name: c.name, color: c.color, done: false, materials: []}}) : null', 
       ng-repeat=
-        'c in game.players[meta.you].hand track by $index', 
+        'c in you().hand track by $index', 
       style=
         'left: {{ $index * spacing }}px;', 
       src=
@@ -23,8 +23,15 @@
     style=
       'float:right;height:100%;width:10%;background-color:black;', 
     ng-click=
-      'meta.currentPlayer == meta.you ? deckClicked(game.players[meta.you], game, meta) : null'
+      'yourTurn() ? deckClicked(you(), game, meta) : null'
   )
+  button(
+    ng-click=
+      'yourTurn() ? jackClicked(you(), game, meta) : null',
+    style=
+      'float: right'
+  )
+    | JACKS: {{ game.pool.black }}
   .pool(
     style=
       'float:right;height:100%;width:15%;'
@@ -33,7 +40,7 @@
       ng-repeat=
         'color in poolColors', 
       ng-click=
-        'meta.currentPlayer == meta.you ? poolClicked(game.players[meta.you], color, game, meta) : null',
+        'yourTurn() ? poolClicked(you(), color, game, meta) : null',
       style=
         'color:#{{ game.pool[color] > 0 ? colors[color] : "eedfe5"}}'
     )
