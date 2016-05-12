@@ -4,7 +4,7 @@ socket.emit('send:message', {
     });
     */
 
-app.controller('gtrController', function($scope, socket) {
+app.controller('gtrController', function($scope, socket, actions) {
 
   // SOCKET behaviour ------------------------------------------------------------------------------------
 
@@ -137,21 +137,21 @@ app.controller('gtrController', function($scope, socket) {
         return;
       } 
       else if (action.kind == 'Rome Demands' && data.card.name != 'Jack') {
-        acted = romeDemands(player, game, meta, data, action);
+        acted = actions.romeDemands(player, game, meta, data, action);
       } 
       else if (action.kind == 'Legionary' && data.card.name != 'Jack') {
-        acted = legionary(player, game, meta, data, action);
+        acted = actions.legionary(player, game, meta, data, action);
       } 
       else if (action.kind == 'Lead') {
-        acted = lead(player, game, meta, data, action);
+        acted = actions.lead(player, game, meta, data, action);
       } 
       else if (action.kind == 'Follow') {
-        acted = follow(player, game, meta, data, action);
+        acted = actions.follow(player, game, meta, data, action);
       } 
       else if ((action.kind == 'Craftsman'
               || action.kind == 'Architect')
               && data.card.name != 'Jack') {
-        acted = layFoundation(player, game, meta, data, action);
+        acted = actions.layFoundation(player, game, meta, data, action);
       }
       if (acted) useAction(player, game, meta);
     }   
@@ -165,10 +165,11 @@ app.controller('gtrController', function($scope, socket) {
 
     if (action != undefined && 
           (action.kind == 'Lead' || action.kind == 'Follow')) {
-      acted = think(player, game.deck);
+      acted = actions.think(player, game.deck);
     }
 
-    if (acted) useAction(player, game, meta);
+    //if (acted) useAction(player, game, meta);
+    useAction(player, game, meta)
   }
 
   $scope.jackClicked = function(player, game, meta) {
@@ -177,7 +178,7 @@ app.controller('gtrController', function($scope, socket) {
 
     if (action != undefined && 
           (action.kind == 'Lead' || action.kind == 'Follow')) {
-      acted = takeJack(player, game);
+      acted = actions.takeJack(player, game);
     }
 
     if (acted) useAction(player, game, meta);
@@ -198,13 +199,13 @@ app.controller('gtrController', function($scope, socket) {
     }
     if (data.card) {
       if (action.kind == 'Craftsman') {
-        acted = fillStructureFromHand(structure, player, data);
+        acted = actions.fillStructureFromHand(structure, player, data);
       } else {
         player.hand.push(data.card);
       }
     } 
     else if (data.material && action.kind == 'Architect') {
-      acted = fillStructureFromStockpile(structure, player, data);
+      acted = actions.fillStructureFromStockpile(structure, player, data);
     }
     if (acted) useAction(player, game, meta);
   }
@@ -215,14 +216,18 @@ app.controller('gtrController', function($scope, socket) {
     var action = player.actions[0];
     var acted = false;
 
-    if (action == undefined || game.pool[color] <= 0) {
+    if (action == undefined || 
+        (game.pool[color] <= 0 && action.kind != 'Jack')) {
       return;
     } 
+    else if (action.kind == 'Jack') {
+      acted = actions.lead(player, game, meta, {index: action.data.index, card:{name: '', color: color}}, action);
+    }
     else if (action.kind == 'Patron') {
-      acted = patron(player, color, game.pool);
+      acted = actions.patron(player, color, game.pool);
     } 
     else if (action.kind == 'Laborer') {
-      acted = laborer(player, color, game.pool);
+      acted = actions.laborer(player, color, game.pool);
     }
 
     if (acted) useAction(player, game, meta);
@@ -235,7 +240,7 @@ app.controller('gtrController', function($scope, socket) {
     var acted = false;
 
     if (action != undefined && action.kind == 'Merchant') {
-      acted = merchant(player, data);
+      acted = actions.merchant(player, data);
     }
 
     if (acted) useAction(player, game, meta);
@@ -247,131 +252,7 @@ app.controller('gtrController', function($scope, socket) {
   }
 
 
-  // GAME ACTIONS -------------------------------------------------------------------------------------------------------
-  // these each return a boolean indicating whether or not an action has been performed
-
-  // when clicking a card in hand in response to a rome demands
-  romeDemands = function(player, game, meta, data, action) {
-    if (data.card.color == action.material) {
-      player.hand.splice(data.index, 1);
-      game.players[action.demander].stockpile.push(data.card.color);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  // when clicking a card in hand while you have a legionary action
-  legionary = function(player, game, meta, data, action) {
-    var color = data.card.color;
-    if (game.pool[color] > 0) {
-      game.pool[color]--;
-      player.stockpile.push(color);
-    }
-    for (var i = 0; i < game.players.length; i++) {
-      if (i != meta.currentPlayer) {
-        game.players[i].actions.splice(0, 0, {kind:'Rome Demands', description:'ROME DEMANDS ' + $scope.materials[color].toUpperCase(), demander: meta.currentPlayer, material: color})
-      }
-    }
-    return true;
-  }
-
-  // when clicking a card in hand and you are to lead
-  lead = function(player, game, meta, data, action) {
-
-    // deal with case where card is a jack
-    var color = data.card.color;
-    player.hand.splice(data.index, 1);
-    player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
-    addClientActions(player, color);
-    player.pending.push(color);
-    for (var i = 0; i < game.players.length; i++) {
-      if (i != meta.currentPlayer) {
-        game.players[i].actions.push({kind:'Follow', description:'THINK or FOLLOW', color: color})
-        addClientActions(game.players[i], color);
-      }
-    }
-    return true;
-  }
-
-  // when clicking a card in hand and you are to follow
-  follow = function(player, game, meta, data, action) {
-
-    var color = data.card.color;
-    if (action.color == color || data.card.name == 'Jack') {
-      player.hand.splice(data.index, 1);
-      player.actions.push({kind: roles[action.color], description: roles[action.color].toUpperCase()});
-      player.pending.push(color);
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  layFoundation = function(player, game, meta, data, action) {
-    player.buildings.push(data.card);
-    player.hand.splice(data.index, 1);
-    return true;
-  }
-
-  think = function(player, deck) {
-    player.hand.push(deck.pop());
-    while (player.hand.length < 5) {
-      player.hand.push(deck.pop());
-    }
-    return true;
-  }
-
-  takeJack = function(player, game) {
-    if (game.pool.black > 0) {
-      player.hand.push({name: 'Jack', color: 'black'});
-      game.pool.black--;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  patron = function(player, color, pool) {
-    player.clientele.push(roles[color]);
-    pool[color]--;
-    return true;
-  }
-
-  laborer = function(player, color, pool) {
-    player.stockpile.push(color);
-    pool[color]--;
-    return true;
-  }
-
-  fillStructureFromHand = function(structure, player, data) {
-    structure.materials.push(data.card.color);
-    player.hand.splice(data.index, 1);
-    return true;
-  }
-
-  fillStructureFromStockpile = function(structure, player, data) {
-    structure.materials.push(data.material);
-    player.stockpile.splice(data.index, 1);
-    return true;
-  }
-
-  merchant = function(player, data) {
-    player.vault.push(data.material);
-    player.stockpile.splice(data.index, 1);
-    return true;
-  }
-
   // META ACTIONS ---------------------------------------------------------------------------------------------------
-
-  // adds actions for clients
-  addClientActions = function(player, color) {
-    player.clientele.forEach(function(client) {
-      if (roles[color] == client) {
-        player.actions.push({kind: client, description: client.toUpperCase()});
-      }
-    }, this);
-  }
 
   // uses action of current player and determines who is to act next
   useAction = function(player, game, meta) {
@@ -400,7 +281,7 @@ app.controller('gtrController', function($scope, socket) {
     }
 
     // if they have just led or followed, they dont go again
-    if (action.kind == 'Lead' || action.kind == 'Follow') {
+    if ((action.kind == 'Lead' && newAction.kind != 'Jack') || action.kind == 'Follow') {
       return nextToAct(game, meta);
     }
 
@@ -464,14 +345,6 @@ app.controller('gtrController', function($scope, socket) {
       'red' : 'brick',
       'purple' : 'marble',
       'blue' : 'stone'
-    }
-  roles = 
-    { 'yellow' : 'Laborer',
-      'green' : 'Craftsman',
-      'grey' : 'Architect',
-      'red' : 'Legionary',
-      'purple' : 'Patron',
-      'blue' : 'Merchant'
     }
   $scope.colors = 
     { 'yellow' : 'F7B628',

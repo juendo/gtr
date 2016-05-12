@@ -132,6 +132,9 @@ img.hand {
     text-align: center;
     font-size: 30px;
 }
+.pool-counter:focus {
+    outline:0;
+}
 .front {
     z-index: 1;
 }

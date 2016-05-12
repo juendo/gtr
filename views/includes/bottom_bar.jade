@@ -42,6 +42,6 @@
       ng-click=
         'yourTurn() ? poolClicked(you(), color, game, meta) : null',
       style=
-        'color:#{{ game.pool[color] > 0 ? colors[color] : "eedfe5"}}'
+        'background-color:#{{ colors[color] }}; color: white'
     )
       | {{ game.pool[color] > 0 ? game.pool[color] : "" }}
