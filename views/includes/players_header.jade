@@ -3,7 +3,6 @@
     ng-repeat='player in game.players', 
     style='width:{{100/game.players.length}}%;'
   )
-    | {{ player.name }}, vault: {{ player.vault.length }}
     .player-actions
-      .player-action
+      .player-action(style='border-radius: 5px;padding:5px;color:#{{player.actions[0] != undefined }};background-color:white;background-color:#{{player.actions[0] != undefined ? actionColors[player.actions[0].kind] : "FFF"}}')
         | {{ player.actions[0].description }}

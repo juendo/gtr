@@ -281,7 +281,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     }
 
     // if they have just led or followed, they dont go again
-    if ((action.kind == 'Lead' && newAction.kind != 'Jack') || action.kind == 'Follow') {
+    if ((action.kind == 'Lead' && newAction.kind != 'Jack') || action.kind == 'Follow' || action.kind == 'Jack') {
       return nextToAct(game, meta);
     }
 
@@ -330,6 +330,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   $scope.actionColors = 
     { 'Lead' : '000',
       'Follow' : '000',
+      'Jack' : '000',
       'Craftsman' : '2CA73D',
       'Laborer' : 'F7B628',
       'Architect' : '9B9D88',

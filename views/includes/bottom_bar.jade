@@ -13,29 +13,25 @@
       ng-repeat=
         'c in you().hand track by $index', 
       style=
-        'left: {{ $index * spacing }}px;', 
+        'left: {{ $index * spacing }}px;bottom:4%;', 
       src=
         'images/cards/{{ c.name }}.png', 
       alt=
         '{{ c.name }}'
     )
-  .deck(
-    style=
-      'float:right;height:100%;width:10%;background-color:black;', 
+  img.deck(
+    src= 
+      '/images/cards/Jack.png'
+    ng-click=
+      'yourTurn() ? jackClicked(you(), game, meta) : null',
+  )
+  img.deck(
+    src= 
+      '/images/cards/deck.png'
     ng-click=
       'yourTurn() ? deckClicked(you(), game, meta) : null'
   )
-  button(
-    ng-click=
-      'yourTurn() ? jackClicked(you(), game, meta) : null',
-    style=
-      'float: right'
-  )
-    | JACKS: {{ game.pool.black }}
-  .pool(
-    style=
-      'float:right;height:100%;width:15%;'
-  )
+  .pool
     button.pool-counter(
       ng-repeat=
         'color in poolColors', 
