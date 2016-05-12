@@ -4,5 +4,5 @@
     style='width:{{100/game.players.length}}%;'
   )
     .player-actions
-      .player-action(style='border-radius: 5px;padding:5px;color:#{{player.actions[0] != undefined }};background-color:white;background-color:#{{player.actions[0] != undefined ? actionColors[player.actions[0].kind] : "FFF"}}')
+      .player-action(style='border-radius: 5px;padding:5px;background-color:white;background-color:#{{player.actions[0] != undefined ? actionColors[player.actions[0].kind] : "000"}}')
         | {{ player.actions[0].description }}
