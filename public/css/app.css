@@ -70,9 +70,13 @@ img.hand {
 }
 .client {
     width: 100%;
-    height: auto;
+    height: 4%;
     float: left;
     display: inline;
+    border: 4px;
+    border-radius: 32%;
+    border-style: solid;
+    border-color: black;
 }
 .player-building-area {
     width: 20%;
@@ -106,7 +110,7 @@ img.hand {
     height:10px;float:left;
 }
 .stockpile {
-    background-color: #E3C9B3; 
+    background-color: #333; 
     bottom: 0px; 
     margin-left:5%; 
     width:95%;
@@ -114,12 +118,13 @@ img.hand {
     position:absolute;
 }
 .stockpile-material {
-    width:2%;
+    width:3%;
     height:100%;
-    float:right;
+    float:left;
     border-style:solid;
-    border-width:0 0 0 1px;
-    border-color:#E3C9B3;
+    border-width:2px;
+    border-color:#333;
+    border-radius: 32%;
 }
 #bottom-bar {
     width: 100%;

@@ -4,9 +4,9 @@
 )
   .player-clientele-shadow
   .player-clientele
-    img.client(
-      ng-repeat='client in player.clientele track by $index', 
-      src='images/clients/{{ client }}.png', alt='{{ client }}'
+    .client(
+      ng-repeat='client in player.clientele track by $index',
+      style='background-color:#{{ actionColors[client] }};'
     )
   .player-building-area(
     ng-repeat='building in player.buildings'
