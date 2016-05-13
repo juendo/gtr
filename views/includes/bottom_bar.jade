@@ -7,13 +7,13 @@
       ng-drag=
         'true', 
       ng-drag-data=
-        '{index: $index, card: {name: c.name, color: c.color, done: false, materials: []}}', 
+        '{index: $index, card: c}', 
       ng-click=
-        'yourTurn() ? handClicked(you(), game, meta, {index: $index, card: {name: c.name, color: c.color, done: false, materials: []}}) : null', 
+        'yourTurn() ? handClicked(you(), game, meta, {index: $index, card: c}) : null', 
       ng-repeat=
         'c in you().hand track by $index', 
       style=
-        'left: {{ $index * spacing }}px;bottom:4%;', 
+        'left: {{ $index * spacing }}px;bottom:{{ 4 + (c.selected ? 4 : 0) }}%;', 
       src=
         'images/cards/{{ c.name }}.png', 
       alt=
@@ -38,6 +38,6 @@
       ng-click=
         'yourTurn() ? poolClicked(you(), color, game, meta) : null',
       style=
-        'background-color:#{{ colors[color] }}; color: white'
+        'background-color:#{{ colors[color] }}; color: white;background:repeating-linear-gradient(45deg,#{{colors[color]}},#{{colors[color]}} 7px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "000"}} 7px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "000"}} 14px)'
     )
       | {{ game.pool[color] > 0 ? game.pool[color] : "" }}

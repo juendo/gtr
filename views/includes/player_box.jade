@@ -1,6 +1,6 @@
 .player-box(
   ng-repeat='player in game.players', 
-  style='background-color: #{{ player == game.players[meta.currentPlayer] ? "bbddbb" : "ffefd5" }};width:{{100/game.players.length}}%;'
+  style='background-color: #{{ player == game.players[meta.currentPlayer] ? "232" : "222" }};width:{{100/game.players.length}}%;'
 )
   .player-clientele-shadow
   .player-clientele
@@ -15,16 +15,17 @@
       ng-drop='true', 
       ng-drop-success='(yourTurn() && $parent.$index == meta.you) ? dragEnded(you(), $data, $event, building, game, meta) : null', 
       src='images/cards/{{ building.name }}.png', 
-      alt='{{ building.name }}', 
-      style='-webkit-filter: grayscale({{building.materials.length < colorValues[building.color] ? 0.6 : 0}});'
+      alt='{{ building.name }}'
     )
-    .materials-holder
+    .materials-holder(
+      style='background:repeating-linear-gradient(-45deg,#FFF,#FFF 7px,#{{colors[building.siteColor]}} 7px,#{{colors[building.siteColor]}} 14px);',
+      ng-if='!building.done'
+    )
       .materials(
-        ng-if='building.materials.length < colorValues[building.color]', 
         style='width:{{ 16 * colorValues[building.color] }}%;'
       )
         .material(
-          ng-repeat='material in building.materials track by $index', 
+          ng-repeat='material in building.materials track by $index',
           style='width: {{ 100 / colorValues[building.color] }}%;background-color:#{{ colors[material] }};'
         )
   .stockpile

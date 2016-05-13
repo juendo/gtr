@@ -17,6 +17,14 @@ app.factory('actions', function ($rootScope) {
       'purple' : 'marble',
       'blue' : 'stone'
     };
+  var colorValues = 
+    { 'yellow' : 1,
+      'green' : 1,
+      'grey' : 2,
+      'red' : 2,
+      'purple' : 3,
+      'blue' : 3
+    };
 
   var addClientActions = function(player, color) {
     player.clientele.forEach(function(client) {
@@ -26,7 +34,61 @@ app.factory('actions', function ($rootScope) {
     }, this);
   };
 
+  var validSelection = function(player, selectedCards, color) {
+    if (selectedCards.length == 0) {
+      return false;
+    }
+    if (selectedCards.length == 1 && selectedCards[0].color == color) {
+      return true;
+    }
+    if (selectedCards.length == 1 && selectedCards[0].name == 'Jack') {
+      return true;
+    }
+    var allSame = true;
+    var firstColor = selectedCards[0].color;
+    selectedCards.forEach(function(card) {
+      allSame = allSame && card.color == firstColor;
+    });
+    if (!allSame) {
+      return false;
+    }
+    return (selectedCards.length == 3);
+  };
+
+  var canAddToStructure = function(structure, player, color) {
+    return !structure.done && structure.color == color;
+  };
+
+  var checkIfComplete = function(structure, player) {
+    console.log(structure);
+    if (colorValues[structure.color] == structure.materials.length) {
+      structure.done = true;
+    }
+  };
+
+  var calculateInfluence = function(player) {
+    var inf = 2;
+      player.buildings.forEach(function(building) {
+        if (building.done) {
+          inf += colorValues[building.siteColor];
+        }
+      }, this);
+      return inf;
+  };
+
+  var clienteleLimit = function(player) {
+    return calculateInfluence(player);
+  };
+
+  var vaultLimit = function(player) {
+    return calculateInfluence(player);
+  };
+
   return {
+    influence: function(player) {
+      return calculateInfluence(player);
+    },
+
     romeDemands: function(player, game, meta, data, action) {
       if (data.card.color == action.material) {
         player.hand.splice(data.index, 1);
@@ -51,20 +113,39 @@ app.factory('actions', function ($rootScope) {
       return true;
     },
 
+    selectCard: function(player, game, meta, data, action) {
+      data.card.selected = !data.card.selected;
+      return false;
+    },
+
     lead: function(player, game, meta, data, action) {
-      if (data.card.name == 'Jack') {
-        player.actions.push({kind:'Jack', description:'CHOOSE A ROLE (CLICK ON POOL)', data: data});
-        return true;
-      }
+
       var color = data.card.color;
-      player.hand.splice(data.index, 1);
+
+      // extract the cards the player has selected
+      var selectedCards = [];
+      player.hand.forEach(function(card) {
+        card.selected ? selectedCards.push(card) : null;
+      }, this);
+      // check if that selection can be used to lead the selected role
+      if (!validSelection(player, selectedCards, color)) {
+        return false;
+      }
+
+      // perform the lead action
       player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
       addClientActions(player, color);
-      player.pending.push(color);
+      player.pending = selectedCards;
+
       for (var i = 0; i < game.players.length; i++) {
         if (i != meta.currentPlayer) {
           game.players[i].actions.push({kind:'Follow', description:'THINK or FOLLOW', color: color})
           addClientActions(game.players[i], color);
+        }
+      }
+      for (var i = 0; i < player.hand.length; i++) {
+        if (player.hand[i].selected) {
+          player.hand.splice(i--, 1);
         }
       }
       return true;
@@ -72,10 +153,20 @@ app.factory('actions', function ($rootScope) {
 
     follow: function(player, game, meta, data, action) {
       var color = data.card.color;
-      if (action.color == color || data.card.name == 'Jack') {
-        player.hand.splice(data.index, 1);
-        player.actions.push({kind: roles[action.color], description: roles[action.color].toUpperCase()});
-        player.pending.push(color);
+      // extract the cards the player has selected
+      var selectedCards = [];
+      player.hand.forEach(function(card) {
+        card.selected ? selectedCards.push(card) : null;
+      }, this);
+
+      if (action.color == color && validSelection(player, selectedCards, color)) {
+        player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
+        player.pending = selectedCards;
+        for (var i = 0; i < player.hand.length; i++) {
+          if (player.hand[i].selected) {
+            player.hand.splice(i--, 1);
+          }
+        }
         return true;
       } else {
         return false;
@@ -83,9 +174,15 @@ app.factory('actions', function ($rootScope) {
     },
 
     layFoundation: function(player, game, meta, data, action) {
-      player.buildings.push(data.card);
-      player.hand.splice(data.index, 1);
-      return true;
+      if (6 - game.sites[data.card.color] < game.players.length) {
+        data.card.siteColor = data.card.color;
+        player.buildings.push(data.card);
+        player.hand.splice(data.index, 1);
+        game.sites[data.card.color]--;
+        return true;
+      } else {
+        return false;
+      }
     },
 
     think: function(player, deck) {
@@ -107,9 +204,13 @@ app.factory('actions', function ($rootScope) {
     },
 
     patron: function(player, color, pool) {
-      player.clientele.push(roles[color]);
-      pool[color]--;
-      return true;
+      if (player.clientele.length < clienteleLimit(player)) {
+        player.clientele.push(roles[color]);
+        pool[color]--;
+        return true;
+      } else {
+        return false;
+      }
     },
 
     laborer: function(player, color, pool) {
@@ -119,21 +220,35 @@ app.factory('actions', function ($rootScope) {
     },
 
     fillStructureFromHand: function(structure, player, data) {
-      structure.materials.push(data.card.color);
-      player.hand.splice(data.index, 1);
-      return true;
+      if (canAddToStructure(structure, player, data.card.color)) {
+        structure.materials.push(data.card.color);
+        player.hand.splice(data.index, 1);
+        checkIfComplete(structure, player);
+        return true;
+      } else {
+        return false;
+      }
     },
 
     fillStructureFromStockpile: function(structure, player, data) {
-      structure.materials.push(data.material);
-      player.stockpile.splice(data.index, 1);
-      return true;
+      if (canAddToStructure(structure, player, data.material)) {
+        structure.materials.push(data.material);
+        player.stockpile.splice(data.index, 1);
+        checkIfComplete(structure, player);
+        return true;
+      } else {
+        return false;
+      }
     },
 
     merchant: function(player, data) {
-      player.vault.push(data.material);
-      player.stockpile.splice(data.index, 1);
-      return true;
+      if (player.vault.length < vaultLimit(player)) {
+        player.vault.push(data.material);
+        player.stockpile.splice(data.index, 1);
+        return true;
+      } else {
+        return false;
+      }
     }
   };
 });
