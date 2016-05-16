@@ -84,7 +84,62 @@ app.factory('actions', function ($rootScope) {
     return calculateInfluence(player);
   };
 
+  var handLimit = function(player) {
+    var limit = 5;
+      player.buildings.forEach(function(building) {
+        if (building.done) {
+          if (building.name == 'Shrine') {
+            limit += 2;
+          } else if (building.name == 'Temple') {
+            limit += 4;
+          }
+        }
+      }, this);
+      return limit;
+  };
+
+  var allSitesUsed = function(sites, length) {
+    var used = true;
+    for (var color in sites) {
+      used = used && (6 - sites[color] >= length);
+    }
+    return used;
+  };
+
   return {
+
+    score: function(player) {
+      return calculateInfluence(player); 
+    },
+
+    handLimit: function(player) {
+      return handLimit(player);
+    },
+
+    validSelection: function(player, selectedCards, color) {
+      return validSelection(player, selectedCards, color);
+    },
+
+    canAddToStructure: function(structure, player, color) {
+      return canAddToStructure(structure, player, color);
+    },
+
+    checkIfComplete: function(structure, player) {
+      return checkIfComplete(structure, player);
+    },
+
+    addClientActions: function(player, color) {
+      return addClientActions(player, color);
+    },
+
+    vaultLimit: function(player) {
+      return vaultLimit(player);
+    },
+
+    clienteleLimit: function(player) {
+      return clienteleLimit(player);
+    },
+
     influence: function(player) {
       return calculateInfluence(player);
     },
@@ -100,6 +155,9 @@ app.factory('actions', function ($rootScope) {
     },
 
     legionary: function(player, game, meta, data, action) {
+      if (data.card.selected) {
+        return false;
+      }
       var color = data.card.color;
       if (game.pool[color] > 0) {
         game.pool[color]--;
@@ -110,6 +168,7 @@ app.factory('actions', function ($rootScope) {
           game.players[i].actions.splice(0, 0, {kind:'Rome Demands', description:'ROME DEMANDS ' + materials[color].toUpperCase(), demander: meta.currentPlayer, material: color})
         }
       }
+      data.card.selected = true;
       return true;
     },
 
@@ -175,10 +234,23 @@ app.factory('actions', function ($rootScope) {
 
     layFoundation: function(player, game, meta, data, action) {
       if (6 - game.sites[data.card.color] < game.players.length) {
+
+        var different = true;
+        player.buildings.forEach(function(building) {
+          if (building.name == data.card.name) {
+            different = false;
+          }
+        }, this);
+        if (different == false) { return false };
+
         data.card.siteColor = data.card.color;
         player.buildings.push(data.card);
         player.hand.splice(data.index, 1);
         game.sites[data.card.color]--;
+
+        if (allSitesUsed(game.sites, game.players.length)) {
+          meta.finished = true;
+        }
         return true;
       } else {
         return false;
@@ -187,9 +259,10 @@ app.factory('actions', function ($rootScope) {
 
     think: function(player, deck) {
       player.hand.push(deck.pop());
-      while (player.hand.length < 5) {
+      while (player.hand.length < handLimit(player) && deck.length > 0) {
         player.hand.push(deck.pop());
       }
+      if (deck.length < 1) { meta.finished = true };
       return true;
     },
 

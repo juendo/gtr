@@ -9,11 +9,12 @@
       style='background-color:#{{ actionColors[client] }};'
     )
   .player-building-area(
+    ng-if='!meta.finished',
     ng-repeat='building in player.buildings'
   )
     img.building(
       ng-drop='true', 
-      ng-drop-success='(yourTurn() && $parent.$index == meta.you) ? dragEnded(you(), $data, $event, building, game, meta) : null', 
+      ng-drop-success='(yourTurn() && $parent.$parent.$index == meta.you) ? dragEnded(you(), $data, $event, building, game, meta) : null', 
       src='images/cards/{{ building.name }}.png', 
       alt='{{ building.name }}'
     )
@@ -28,9 +29,13 @@
           ng-repeat='material in building.materials track by $index',
           style='width: {{ 100 / colorValues[building.color] }}%;background-color:#{{ colors[material] }};'
         )
+  .score-box(
+    ng-if='meta.finished'
+  )
+    | {{ score(player) }} points
   .stockpile
     .stockpile-material(
-      ng-drag='true', 
+      ng-drag='$parent.$index == meta.you',
       ng-drag-data='{index: $index, material: material}', 
       ng-repeat='material in player.stockpile track by $index', 
       ng-click='yourTurn() ? stockpileClicked(you(), {index: $index, material: material}, game, meta) : null', 

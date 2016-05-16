@@ -89,7 +89,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // the game state
   $scope.game = {players:[{name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}],pool:{'yellow':0,'green':0,'red':0,'grey':0,'purple':0,'blue':0,'black':6},deck:[],sites:{'yellow':6,'green':6,'red':6,'grey':6,'purple':6,'blue':6}};
 
-  $scope.meta = { started: false, created: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" };
+  $scope.meta = { started: false, created: false, finished: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" };
 
 
   // helper to shuffle the deck
@@ -190,6 +190,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // called when a drag ends over a structure
   $scope.dragEnded = function(player, data, evt, structure, game, meta) {
+    console.log(player);
 
     var action = player.actions[0];
     var acted = false;
@@ -262,6 +263,9 @@ app.controller('gtrController', function($scope, socket, actions) {
     return actions.influence(player);
   }
 
+  $scope.score = function(player) {
+    return actions.score(player);
+  };
 
   // META ACTIONS ---------------------------------------------------------------------------------------------------
 
@@ -302,6 +306,11 @@ app.controller('gtrController', function($scope, socket, actions) {
   // sets the current player to the next player with actions, 
   // or advances to the next turn if there is none
   nextToAct = function(game, meta) {
+
+    $scope.you().hand.forEach(function(card) {
+      card.selected = false;
+    }, this);
+
     var current = meta.currentPlayer;
     var players = game.players;
     // for each player after the current player
