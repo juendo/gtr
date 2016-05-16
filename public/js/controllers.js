@@ -150,7 +150,9 @@ app.controller('gtrController', function($scope, socket, actions) {
       } 
       else if (action.kind == 'Lead' || action.kind == 'Follow') {
         acted = actions.selectCard(player, game, meta, data, action);
-        //acted = actions.lead(player, game, meta, data, action);
+      }
+      else if (action.kind == 'Patron' && data.card.name != 'Jack') {
+        acted = actions.patron(player, null, null, data, action);
       }
       else if ((action.kind == 'Craftsman'
               || action.kind == 'Architect')
@@ -168,7 +170,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     var acted = false;
 
     if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow')) {
+          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
       acted = actions.think(player, game.deck);
     }
 
@@ -181,7 +183,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     var acted = false;
 
     if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow')) {
+          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
       acted = actions.takeJack(player, game);
     }
 
@@ -204,13 +206,13 @@ app.controller('gtrController', function($scope, socket, actions) {
     }
     if (data.card) {
       if (action.kind == 'Craftsman') {
-        acted = actions.fillStructureFromHand(structure, player, data);
+        acted = actions.fillStructureFromHand(structure, player, data, meta);
       } else {
         player.hand.push(data.card);
       }
     } 
     else if (data.material && action.kind == 'Architect') {
-      acted = actions.fillStructureFromStockpile(structure, player, data);
+      acted = actions.fillStructureFromStockpile(structure, player, data, meta);
     }
     if (acted) useAction(player, game, meta);
   }
@@ -229,7 +231,7 @@ app.controller('gtrController', function($scope, socket, actions) {
       acted = actions.lead(player, game, meta, {card:{name: '', color: color}}, action);
     }
     else if (action.kind == 'Patron') {
-      acted = actions.patron(player, color, game.pool);
+      acted = actions.patron(player, color, game.pool, null, action);
     } 
     else if (action.kind == 'Laborer') {
       acted = actions.laborer(player, color, game.pool);
@@ -246,6 +248,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
     var action = player.actions[0];
     var acted = false;
+    player.buildings.push({name: 'Aqueduct', color: 'grey', done: true, materials: [], selected: false, copy:4, siteColor: 'grey'});
 
     if (action != undefined && action.kind == 'Merchant') {
       acted = actions.merchant(player, data);
@@ -275,11 +278,19 @@ app.controller('gtrController', function($scope, socket, actions) {
     var action = player.actions[0];
     player.actions.shift();
     var newAction = player.actions[0];
+    console.log(action);
 
     if (isDragging) isDragging = false;
 
     // if the player has no actions left, find next player to act
     if (newAction == undefined) {
+
+      // check if you have used an academy
+      var academy = actions.hasAbilityToUse('Academy', player);
+      if (academy && academy.used) {
+        academy.used = false;
+        return;
+      }
       return nextToAct(game, meta);
     }
 
@@ -306,7 +317,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // sets the current player to the next player with actions, 
   // or advances to the next turn if there is none
   nextToAct = function(game, meta) {
-
+    // unselect the cards
     $scope.you().hand.forEach(function(card) {
       card.selected = false;
     }, this);
@@ -323,6 +334,7 @@ app.controller('gtrController', function($scope, socket, actions) {
       }
     }
 
+    // move on the leader
     meta.leader = (meta.leader + 1) % players.length;
     meta.currentPlayer = meta.leader;
     players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
@@ -357,7 +369,8 @@ app.controller('gtrController', function($scope, socket, actions) {
       'Legionary' : 'E5020C',
       'Patron' : '8E2170',
       'Merchant' : '02AEDE',
-      'Rome Demands' : 'FFF'
+      'Rome Demands' : 'FFF',
+      'Think' : 'FFF'
     }
   $scope.materials = 
     { 'yellow' : 'rubble',

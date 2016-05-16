@@ -56,13 +56,34 @@ app.factory('actions', function ($rootScope) {
   };
 
   var canAddToStructure = function(structure, player, color) {
-    return !structure.done && structure.color == color;
+    return !structure.done && structure.siteColor == color;
   };
 
-  var checkIfComplete = function(structure, player) {
-    console.log(structure);
-    if (colorValues[structure.color] == structure.materials.length) {
-      structure.done = true;
+  var checkIfComplete = function(structure, player, meta) {
+    if (colorValues[structure.siteColor] > structure.materials.length) return;
+    structure.done = true;
+    if (structure.name == 'Amphitheatre') {
+      for (var i = 0; i < calculateInfluence(player); i++) {
+        player.actions.splice(0, 0, {kind: 'Craftsman', description: 'CRAFTSMAN'});
+      }
+    } 
+    else if (structure.name == 'Catacomb') {
+      meta.finished = true;
+    }
+    else if (structure.name == 'Foundry') {
+      for (var i = 0; i < calculateInfluence(player); i++) {
+        player.actions.splice(0, 0, {kind: 'Laborer', description: 'LABORER'});
+      }
+    }
+    else if (structure.name == 'Garden') {
+      for (var i = 0; i < calculateInfluence(player); i++) {
+        player.actions.splice(0, 0, {kind: 'Patron', description: 'PATRON'});
+      }
+    }
+    else if (structure.name == 'School') {
+      for (var i = 0; i < calculateInfluence(player); i++) {
+        player.actions.splice(0, 0, {kind: 'Think', description: 'THINK'});
+      }
     }
   };
 
@@ -77,25 +98,23 @@ app.factory('actions', function ($rootScope) {
   };
 
   var clienteleLimit = function(player) {
-    return calculateInfluence(player);
+    var limit = calculateInfluence(player);
+    if (hasAbilityToUse('Insula', player)) limit += 2;
+    if (hasAbilityToUse('Aqueduct', player)) limit = limit * 2;
+    return limit;
   };
 
   var vaultLimit = function(player) {
-    return calculateInfluence(player);
+    var limit = calculateInfluence(player);
+    if (hasAbilityToUse('Market', player)) limit += 2;
+    return limit;
   };
 
   var handLimit = function(player) {
     var limit = 5;
-      player.buildings.forEach(function(building) {
-        if (building.done) {
-          if (building.name == 'Shrine') {
-            limit += 2;
-          } else if (building.name == 'Temple') {
-            limit += 4;
-          }
-        }
-      }, this);
-      return limit;
+    if (hasAbilityToUse('Shrine', player)) limit += 2;
+    if (hasAbilityToUse('Temple', player)) limit += 4;
+    return limit;
   };
 
   var allSitesUsed = function(sites, length) {
@@ -106,7 +125,34 @@ app.factory('actions', function ($rootScope) {
     return used;
   };
 
+  var hasAbilityToUse = function(building, player) {
+    var hasGate = false;
+    player.buildings.forEach(function(structure) {
+      if (structure.done && structure.name == 'Gate') hasGate = true;
+    }, this);
+    var has = null;
+    player.buildings.forEach(function(structure) {
+      if ((structure.done || (structure.color == 'purple' && hasGate)) && structure.name == building) has = structure;
+    }, this);
+    return has;
+  };
+
+  var checkAcademy = function(player, action) {
+    // check if player has an academy
+    var academy = hasAbilityToUse('Academy', player);
+    if (academy 
+      && !academy.used
+      && action.kind == 'Craftsman') {
+      player.actions.push({kind: 'Think', description: 'THINK'});
+      academy.used = true;
+    }
+  };
+
   return {
+
+    hasAbilityToUse: function(building, player) {
+      return hasAbilityToUse(building, player);
+    },
 
     score: function(player) {
       return calculateInfluence(player); 
@@ -124,8 +170,8 @@ app.factory('actions', function ($rootScope) {
       return canAddToStructure(structure, player, color);
     },
 
-    checkIfComplete: function(structure, player) {
-      return checkIfComplete(structure, player);
+    checkIfComplete: function(structure, player, meta) {
+      return checkIfComplete(structure, player, meta);
     },
 
     addClientActions: function(player, color) {
@@ -235,6 +281,7 @@ app.factory('actions', function ($rootScope) {
     layFoundation: function(player, game, meta, data, action) {
       if (6 - game.sites[data.card.color] < game.players.length) {
 
+        // check if player has already layed that building
         var different = true;
         player.buildings.forEach(function(building) {
           if (building.name == data.card.name) {
@@ -242,6 +289,8 @@ app.factory('actions', function ($rootScope) {
           }
         }, this);
         if (different == false) { return false };
+
+        checkAcademy(player, action);
 
         data.card.siteColor = data.card.color;
         player.buildings.push(data.card);
@@ -276,14 +325,26 @@ app.factory('actions', function ($rootScope) {
       }
     },
 
-    patron: function(player, color, pool) {
+    patron: function(player, color, pool, data, action) {
+
       if (player.clientele.length < clienteleLimit(player)) {
-        player.clientele.push(roles[color]);
-        pool[color]--;
-        return true;
-      } else {
-        return false;
+        if (pool) {
+          player.clientele.push(roles[color]);
+          pool[color]--;
+          if (hasAbilityToUse('Aqueduct', player)) {
+            action.takenFromPool = true;
+            return !!action.takenFromHand;
+          } else {
+            return true;
+          }
+        } else if (hasAbilityToUse('Aqueduct', player)) {
+          player.clientele.push(roles[data.card.color]);
+          player.hand.splice(data.index, 1);
+          action.takenFromHand = true;
+          return !!action.takenFromPool;
+        } 
       }
+      return false;
     },
 
     laborer: function(player, color, pool) {
@@ -292,22 +353,26 @@ app.factory('actions', function ($rootScope) {
       return true;
     },
 
-    fillStructureFromHand: function(structure, player, data) {
+    fillStructureFromHand: function(structure, player, data, meta) {
       if (canAddToStructure(structure, player, data.card.color)) {
         structure.materials.push(data.card.color);
         player.hand.splice(data.index, 1);
-        checkIfComplete(structure, player);
+        checkIfComplete(structure, player, meta);
+
+        checkAcademy(player,{kind:'Craftsman'});
+
         return true;
       } else {
         return false;
       }
     },
 
-    fillStructureFromStockpile: function(structure, player, data) {
+    fillStructureFromStockpile: function(structure, player, data, meta) {
       if (canAddToStructure(structure, player, data.material)) {
         structure.materials.push(data.material);
         player.stockpile.splice(data.index, 1);
-        checkIfComplete(structure, player);
+        checkIfComplete(structure, player, meta);
+
         return true;
       } else {
         return false;
