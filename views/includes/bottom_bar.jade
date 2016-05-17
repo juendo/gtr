@@ -33,6 +33,10 @@
   )
   .pool
     button.pool-counter(
+      ng-drag=
+        'game.pool[color] > 0 && yourTurn() && hasArchway(you())',
+      ng-drag-data=
+        '{color:color}',
       ng-repeat=
         'color in poolColors', 
       ng-click=

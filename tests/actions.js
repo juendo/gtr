@@ -14,7 +14,6 @@ describe('gtr', function () {
       actions = $injector.get('actions');
       controller = $controller('gtrController', 
         { $scope: $scope, socket: {on: function(a, b) {}, emit: function(a, b) {}}, actions:actions});
-
   }));
 
   describe('actions', function () {
@@ -145,11 +144,13 @@ describe('gtr', function () {
       });
     });
     
-    describe('upon completions', function() {
+    describe('completion checks', function() {
       var checkIfComplete;
       var player;
       var meta;
+      var canAddToStructure;
       beforeEach(function() {
+        canAddToStructure = actions.canAddToStructure;
         checkIfComplete = actions.checkIfComplete;
         player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
         meta = {finished: false};
@@ -195,6 +196,37 @@ describe('gtr', function () {
         expect(school.done).toBe(true);
         expect(player.actions.length).toBe(actionCount + actions.influence(player));
         expect(player.actions[0].kind).toBe('Think');
+      });
+      it('should add marble to any unfinished structure with scriptorium', function() {
+        var garden = {name: 'Garden', color: 'blue', done: false, materials: [], selected: false, copy:1, siteColor: 'blue'};
+        var scriptorium = {name: 'Scriptorium', color: 'blue', done: true, materials: [], selected: false, copy:1, siteColor: 'blue'};
+        player.buildings.push(garden);
+        player.buildings.push(scriptorium);
+        expect(canAddToStructure(garden, player, 'purple')).toBe(true);
+      });
+      it('building with marble as most recent thing added is finished with scriptorium', function() {
+        var garden = {name: 'Garden', color: 'blue', done: false, materials: ['purple'], selected: false, copy:1, siteColor: 'blue'};
+        var scriptorium = {name: 'Scriptorium', color: 'blue', done: true, materials: [], selected: false, copy:1, siteColor: 'blue'};
+        player.buildings.push(garden);
+        player.buildings.push(scriptorium);
+        checkIfComplete(garden, player, {});
+        expect(garden.done).toBe(true);
+      });
+      it('can add any material to stone buildings with road', function() {
+        var road = {name: 'Road', color: 'yellow', done: true, materials: ['yellow'], selected: false, copy:1, siteColor: 'yellow'};
+        player.buildings.push(road);
+        var garden = {name: 'Garden', color: 'blue', done: false, materials: ['purple'], selected: false, copy:1, siteColor: 'blue'};
+        player.buildings.push(garden);
+        expect(canAddToStructure(garden, player, 'green')).toBe(true);
+        expect(canAddToStructure(garden, player, 'red')).toBe(true);
+      });
+      it('should finish villa in one architect but not in craftsman', function() {
+        var villa = {name: 'Villa', color: 'blue', done: false, materials: ['blue'], selected: false, copy:1, siteColor: 'blue'};
+        player.buildings.push(villa);
+        checkIfComplete(villa, player, meta, 'Craftsman');
+        expect(villa.done).toBe(false);
+        checkIfComplete(villa, player, meta, 'Architect');
+        expect(villa.done).toBe(true);
       });
     });
 
@@ -293,7 +325,7 @@ describe('gtr', function () {
       });
     });
 
-    describe('Aqueduct', function() {
+    describe('hiring clients', function() {
       var player;
       var aqueduct;
       var pool;
@@ -306,7 +338,7 @@ describe('gtr', function () {
         action = {kind: 'Patron'};
         aqueduct = {name: 'Aqueduct', color: 'grey', done: true, materials: [], selected: false, copy:2, siteColor: 'grey'};
       });
-      it('shouldnt imediately spend the action when you take a client from the pool', function() {
+      it('with aqueduct shouldnt imediately spend the action when you take a client from the pool', function() {
         player.buildings.push(aqueduct);
         expect(patron(player, 'yellow', pool, null, action)).toBe(false);
         expect(player.clientele.length).toBe(1);
@@ -321,23 +353,254 @@ describe('gtr', function () {
         player.hand.push(gate);
         expect(patron(player, null, null, {index: 0, card: gate}, action)).toBe(false);
       });
-      it('should spend the action if you take from pool after taking from hand', function() {
+      it('with aqueduct should spend the action if you take from pool after taking from hand', function() {
         player.buildings.push(aqueduct);
         action.takenFromHand = true;
         expect(patron(player, 'yellow', pool, null, action)).toBe(true);
       });
-      it('shouldnt immediately spend the action if you take from hand', function() {
+      it('with aqueduct shouldnt immediately spend the action if you take from hand', function() {
         player.buildings.push(aqueduct);
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
         expect(patron(player, 'yellow', null, {index: 0, card: gate}, action)).toBe(false);
       });
-      it('should spend the action if you take from hand after taking from pool', function() {
+      it('with aqueduct should spend the action if you take from hand after taking from pool', function() {
         player.buildings.push(aqueduct);
         action.takenFromPool = true;
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
         expect(patron(player, null, null, {index: 0, card: gate}, action)).toBe(true);
+      });
+      it('with aqueduct shouldnt take a client from pool if you already have', function() {
+        player.buildings.push(aqueduct);
+        action.takenFromPool = true;
+        expect(patron(player, 'yellow', pool, null, action)).toBe(false);
+        expect(player.clientele.length).toBe(0);
+      });
+      it('with aqueduct shouldnt take a client from hand if you already have', function() {
+        player.buildings.push(aqueduct);
+        action.takenFromHand = true;
+        var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.hand.push(gate);
+        expect(patron(player, null, null, {index: 0, card: gate}, action)).toBe(false);
+        expect(player.clientele.length).toBe(0);
+      });
+      it('should add action for client when hired with bath', function() {
+        var bath = {name: 'Bath', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.buildings.push(bath);
+        var used = patron(player, 'yellow', pool, null, action);
+        expect(used).toBe(false);
+        expect(player.actions[0].kind).toBe('Laborer');
+      });
+      it('should add action for client when hired from hand with aqueduct and bath', function() {
+        var bath = {name: 'Bath', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.buildings.push(bath);
+        player.buildings.push(aqueduct);
+        var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.hand.push(gate);
+        expect(patron(player, null, null, {index: 0, card: gate}, action)).toBe(false);
+        expect(player.actions[0].kind).toBe('Legionary');
+      });
+    });
+
+    describe('modifying clients', function() {
+      var player;
+      var addClientActions;
+      beforeEach(function() {
+        player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        addClientActions = actions.addClientActions;
+      });
+      it('should count any client as laborer with storeroom', function() {
+        var storeroom = {name: 'Storeroom', color: 'grey', done: true, materials: ['grey', 'grey'], selected: false, copy:1, siteColor: 'grey'};
+        player.buildings.push(storeroom);
+        player.clientele.push('Craftsman');
+        player.clientele.push('Merchant');
+        addClientActions(player, 'yellow');
+        expect(player.actions.length).toBe(2);
+      });
+      it('shouldnt count any client as laborer without storeroom', function() {
+        player.clientele.push('Craftsman');
+        player.clientele.push('Merchant');
+        addClientActions(player, 'yellow');
+        expect(player.actions.length).toBe(0);
+      });
+      it('should add actions for any role with merchant client and ludus magnus', function() {
+        var ludus = {name: 'LudusMagnus', color: 'blue', done: true, materials: ['blue', 'blue'], selected: false, copy:1, siteColor: 'blue'};
+        player.buildings.push(ludus);
+        player.clientele.push('Craftsman');
+        player.clientele.push('Merchant');
+        addClientActions(player, 'yellow');
+        expect(player.actions.length).toBe(1);
+      });
+    });
+
+    describe('laborer', function() {
+      var player;
+      var dock;
+      var pool;
+      var laborer;
+      var action;
+      beforeEach(function() {
+        laborer = actions.laborer;
+        pool = {'yellow':5};
+        player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        action = {kind: 'Laborer'};
+        dock = {name: 'Dock', color: 'green', done: true, materials: [], selected: false, copy:2, siteColor: 'green'};
+      });
+      it('should immediately spend action when you dont have a dock', function() {
+        expect(laborer(player, 'yellow', pool, null, action)).toBe(true);
+        expect(player.stockpile.length).toBe(1);
+      });
+      it('shouldnt immediately spend action when you have a dock', function() {
+        player.buildings.push(dock);
+        expect(laborer(player, 'yellow', pool, null, action)).toBe(false);
+        expect(player.stockpile.length).toBe(1);
+      });
+      it('shouldnt take a material from hand when you dont have dock', function() {
+        action.takenFromPool = true;
+        var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.hand.push(gate);
+        expect(laborer(player, null, null, {index: 0, card: gate}, action)).toBe(false);
+      });
+      it('with dock should spend the action if you take from pool after taking from hand', function() {
+        player.buildings.push(dock);
+        action.takenFromHand = true;
+        expect(laborer(player, 'yellow', pool, null, action)).toBe(true);
+      });
+      it('with dock shouldnt immediately spend the action if you take from hand', function() {
+        player.buildings.push(dock);
+        var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.hand.push(gate);
+        expect(laborer(player, 'yellow', null, {index: 0, card: gate}, action)).toBe(false);
+      });
+      it('with dock should spend the action if you take from hand after taking from pool', function() {
+        player.buildings.push(dock);
+        action.takenFromPool = true;
+        var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.hand.push(gate);
+        expect(laborer(player, null, null, {index: 0, card: gate}, action)).toBe(true);
+      });
+      it('with dock shouldnt take a client from pool if you already have', function() {
+        player.buildings.push(dock);
+        action.takenFromPool = true;
+        expect(laborer(player, 'yellow', pool, null, action)).toBe(false);
+        expect(player.stockpile.length).toBe(0);
+      });
+      it('with dock shouldnt take a client from hand if you already have', function() {
+        player.buildings.push(dock);
+        action.takenFromHand = true;
+        var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.hand.push(gate);
+        expect(laborer(player, null, null, {index: 0, card: gate}, action)).toBe(false);
+        expect(player.stockpile.length).toBe(0);
+      });
+    });
+
+    describe('merchant', function() {
+      var player;
+      var basilica;
+      var merchant;
+      var action;
+      var materialData;
+      var handData;
+      beforeEach(function() {
+        merchant = actions.merchant;
+        player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        action = {kind: 'Merchant'};
+        basilica = {name: 'Basilica', color: 'blue', done: true, materials: [], selected: false, copy:2, siteColor: 'blue'};
+        player.stockpile.push('yellow');
+        materialData = {index: 0, material: 'yellow'};
+        var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        player.hand.push(gate);
+        handData = {index: 0, card: gate};
+      });
+      it('should immediately spend action when you dont have a basilica', function() {
+        expect(merchant(player, materialData, action)).toBe(true);
+        expect(player.vault.length).toBe(1);
+      });
+      it('shouldnt immediately spend action when you have a basilica', function() {
+        player.buildings.push(basilica);
+        expect(merchant(player, materialData, action)).toBe(false);
+        expect(player.vault.length).toBe(1);
+      });
+      it('shouldnt take a material from hand when you dont have basilica', function() {
+        action.takenFromStockpile = true;
+        expect(merchant(player, handData, action)).toBe(false);
+      });
+      it('with basilica should spend the action if you take from stockpile after taking from hand', function() {
+        player.buildings.push(basilica);
+        action.takenFromHand = true;
+        expect(merchant(player, materialData, action)).toBe(true);
+      });
+      it('with basilica shouldnt immediately spend the action if you take from hand', function() {
+        player.buildings.push(basilica);
+        expect(merchant(player, handData, action)).toBe(false);
+      });
+      it('with basilica should spend the action if you take from hand after taking from stockpile', function() {
+        player.buildings.push(basilica);
+        action.takenFromStockpile = true;
+        expect(merchant(player, handData, action)).toBe(true);
+      });
+      it('with basilica shouldnt take a material from stockpile if you already have', function() {
+        player.buildings.push(basilica);
+        action.takenFromStockpile = true;
+        expect(merchant(player, materialData, action)).toBe(false);
+        expect(player.vault.length).toBe(0);
+      });
+      it('with basilica shouldnt take a material from hand if you already have', function() {
+        player.buildings.push(basilica);
+        action.takenFromHand = true;
+        expect(merchant(player, handData, action)).toBe(false);
+        expect(player.vault.length).toBe(0);
+      });
+    });
+
+    describe('palace', function() {
+      var player;
+      var palace;
+      var validSelection;
+      var jack;
+      var shrine;
+      var dock;
+      beforeEach(function() {
+        validSelection = actions.validSelection;
+        player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        palace = {name: 'Palace', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'purple'};
+        jack = {name: 'Jack', color: 'black'};
+        shrine = {name: 'Shrine', color: 'red'};
+        dock = {name: 'Dock', color: 'green'};
+      });
+      it('should be valid for any number of cards that match the target action with palace', function() {
+        player.buildings.push(palace);
+        expect(validSelection(player, [shrine, shrine], 'red')).toBe(true);
+        expect(validSelection(player, [shrine, shrine, shrine, shrine], 'red')).toBe(true);
+      });
+      it('shouldnt be valid for a mixed set of cards that dont all match target action with palace', function() {
+        player.buildings.push(palace);
+        expect(validSelection(player, [shrine, dock], 'red')).toBe(false);
+        expect(validSelection(player, [shrine, shrine, shrine, dock], 'red')).toBe(false);
+      });
+      it('shouldnt be valid for cards that are the same but dont match the target action with palace', function() {
+        player.buildings.push(palace);
+        expect(validSelection(player, [dock, dock], 'red')).toBe(false);
+        expect(validSelection(player, [dock, dock, dock, dock], 'red')).toBe(false);
+      });
+      it('should be valid for cards that are the same and match, plus any number of jacks', function() {
+        player.buildings.push(palace);
+        expect(validSelection(player, [shrine, shrine, jack], 'red')).toBe(true);
+        expect(validSelection(player, [jack, shrine, jack, jack, jack], 'red')).toBe(true);
+        expect(validSelection(player, [jack, shrine, jack, dock, jack], 'red')).toBe(false);
+        expect(validSelection(player, [jack, jack, jack, jack, jack], 'red')).toBe(true);
+      });
+      it('should be valid with other colors added in a multiple of three', function() {
+        player.buildings.push(palace);
+        expect(validSelection(player, [shrine, dock, dock, dock], 'red')).toBe(true);
+      });
+      it('should add on extra actions', function() {
+        player.buildings.push(palace);
+        validSelection(player, [shrine, dock, dock, dock], 'red');
+        expect(player.actions.length).toBe(1);
+        expect(player.actions[0].kind).toBe('Legionary');
       });
     });
   });

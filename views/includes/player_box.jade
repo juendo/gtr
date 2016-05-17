@@ -10,7 +10,7 @@
     )
   .player-building-area(
     ng-if='!meta.finished',
-    ng-repeat='building in player.buildings'
+    ng-repeat='building in player.buildings track by $index'
   )
     img.building(
       ng-drop='true', 

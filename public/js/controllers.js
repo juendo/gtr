@@ -154,6 +154,12 @@ app.controller('gtrController', function($scope, socket, actions) {
       else if (action.kind == 'Patron' && data.card.name != 'Jack') {
         acted = actions.patron(player, null, null, data, action);
       }
+      else if (action.kind == 'Laborer' && data.card.name != 'Jack') {
+        acted = actions.laborer(player, null, null, data, action);
+      }
+      else if (action.kind == 'Merchant' && data.card.name != 'Jack') {
+        acted = actions.merchant(player, data, action);
+      }
       else if ((action.kind == 'Craftsman'
               || action.kind == 'Architect')
               && data.card.name != 'Jack') {
@@ -214,6 +220,9 @@ app.controller('gtrController', function($scope, socket, actions) {
     else if (data.material && action.kind == 'Architect') {
       acted = actions.fillStructureFromStockpile(structure, player, data, meta);
     }
+    else if (data.color && action.kind == 'Architect') {
+      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game.pool);
+    }
     if (acted) useAction(player, game, meta);
   }
 
@@ -234,7 +243,7 @@ app.controller('gtrController', function($scope, socket, actions) {
       acted = actions.patron(player, color, game.pool, null, action);
     } 
     else if (action.kind == 'Laborer') {
-      acted = actions.laborer(player, color, game.pool);
+      acted = actions.laborer(player, color, game.pool, null, action);
     } 
     else if (action.kind == 'Follow') {
       acted = actions.follow(player, game, meta, {card:{name: '', color: color}}, action);
@@ -248,10 +257,9 @@ app.controller('gtrController', function($scope, socket, actions) {
 
     var action = player.actions[0];
     var acted = false;
-    player.buildings.push({name: 'Aqueduct', color: 'grey', done: true, materials: [], selected: false, copy:4, siteColor: 'grey'});
 
     if (action != undefined && action.kind == 'Merchant') {
-      acted = actions.merchant(player, data);
+      acted = actions.merchant(player, data, action);
     }
 
     if (acted) useAction(player, game, meta);
@@ -264,6 +272,10 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   $scope.influence = function(player) {
     return actions.influence(player);
+  }
+
+  $scope.hasArchway = function(player) {
+    return !!actions.hasAbilityToUse('Archway', player);
   }
 
   $scope.score = function(player) {
