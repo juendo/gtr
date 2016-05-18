@@ -38,6 +38,7 @@ describe('gtr', function () {
       expect(actions.validSelection).toBeDefined();
       expect(actions.handLimit).toBeDefined();
       expect(actions.hasAbilityToUse).toBeDefined();
+      expect(actions.vomitorium).toBeDefined();
     });
 
     describe('influence', function() {
@@ -149,11 +150,19 @@ describe('gtr', function () {
       var player;
       var meta;
       var canAddToStructure;
+      var prison;
+      var steal;
+      var opp;
+      var influence;
       beforeEach(function() {
         canAddToStructure = actions.canAddToStructure;
         checkIfComplete = actions.checkIfComplete;
         player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
         meta = {finished: false};
+        prison = {name: 'Prison', color: 'blue', done: false, materials: ['blue', 'blue', 'blue'], selected: false, copy:1, siteColor: 'blue'};
+        steal = actions.prison;
+        opp = {name:"opp",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        influence = actions.influence;
       });
       it('should add craftsman actions for amphitheatre', function() {
         var amphitheatre = {name: 'Amphitheatre', color: 'grey', done: false, materials: ['grey', 'grey'], selected: false, copy:1, siteColor: 'grey'};
@@ -227,6 +236,44 @@ describe('gtr', function () {
         expect(villa.done).toBe(false);
         checkIfComplete(villa, player, meta, 'Architect');
         expect(villa.done).toBe(true);
+      });
+      it('should add a choose building to steal action for a prison', function() {
+        player.buildings.push(prison);
+        checkIfComplete(prison, player, meta, 'Craftsman');
+        expect(player.actions[0].kind).toBe('Prison');
+      });
+      it('prison should return true for completed building stolen', function() {
+        player.buildings.push(prison);
+        var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        opp.buildings.push(foundry);
+        expect(steal(player, foundry, opp, 0)).toBe(true);
+      });
+      it('prison should return false for incomplete building stolen', function() {
+        player.buildings.push(prison);
+        var foundry = {name: 'Foundry', color: 'red', done: false, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        opp.buildings.push(foundry);
+        expect(steal(player, foundry, opp, 0)).toBe(false);
+      });
+      it('prison should add complete building to players buildings', function() {
+        player.buildings.push(prison);
+        var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        opp.buildings.push(foundry);
+        steal(player, foundry, opp, 0);
+        expect(player.buildings[1]).toBe(foundry);
+      });
+      it('prison should remove opponents building', function() {
+        player.buildings.push(prison);
+        var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        opp.buildings.push(foundry);
+        steal(player, foundry, opp, 0);
+        expect(opp.buildings.length).toBe(0);
+      });
+      it('prison should add three influence to opponent and not rid them of the influence from the stolen building', function() {
+        player.buildings.push(prison);
+        var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
+        opp.buildings.push(foundry);
+        steal(player, foundry, opp, 0);
+        expect(influence(opp)).toBe(7);
       });
     });
 
@@ -601,6 +648,137 @@ describe('gtr', function () {
         validSelection(player, [shrine, dock, dock, dock], 'red');
         expect(player.actions.length).toBe(1);
         expect(player.actions[0].kind).toBe('Legionary');
+      });
+    });
+
+    describe('checking for latrine and vomitorium', function() {
+      var latrine;
+      var jack;
+      var shrine;
+      var dock;
+      var checkLatrine;
+      var pool;
+      var player;
+      var vomitorium;
+      var useVomitorium;
+      beforeEach(function() {
+        latrine = {name: 'Latrine', color: 'yellow', done: true, materials: [], selected: false, copy:2, siteColor: 'yellow'};
+        jack = {name: 'Jack', color: 'black'};
+        player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        player.actions.push({kind:'Lead', description:'LEAD or THINK'});
+        shrine = {name: 'Shrine', color: 'red'};
+        dock = {name: 'Dock', color: 'green'};
+        checkLatrine = actions.checkLatrine;
+        pool = {'black':0, 'red': 0, 'green': 0};
+        player.hand.push(shrine, jack, dock);
+        vomitorium = {name: 'Vomitorium', color: 'grey', done: true, materials: [], selected: false, copy:2, siteColor: 'grey'};
+        useVomitorium = actions.vomitorium;
+      });
+      it('should return false when player has no latrine', function() {
+        expect(checkLatrine(player, pool)).toBe(false);
+      });
+      it('should return false when player has latrine and no card selected', function() {
+        player.buildings.push(latrine);
+        expect(checkLatrine(player, pool)).toBe(false);
+      });
+      it('should return false when player has latrine and more than one card selected', function() {
+        player.buildings.push(latrine);
+        dock.selected = true;
+        shrine.selected = true;
+        expect(checkLatrine(player, pool)).toBe(false);
+      });
+      it('should return true when player has latrine and one card selected', function() {
+        player.buildings.push(latrine);
+        jack.selected = true;
+        expect(checkLatrine(player, pool)).toBe(true);
+      });
+      it('should get rid of the single selected card from players hand', function() {
+        player.buildings.push(latrine);
+        jack.selected = true;
+        checkLatrine(player, pool);
+        expect(player.hand.length).toBe(2);
+        expect(player.hand[0]).toBe(shrine);
+        expect(player.hand[1]).toBe(dock);
+      });
+      it('should return false when player has no vomitorium', function() {
+        expect(useVomitorium(player, pool)).toBe(false);
+      });
+      it('should return true when a player has a vomitorium', function() {
+        player.buildings.push(vomitorium);
+        expect(useVomitorium(player, pool)).toBe(true);
+      });
+      it('should get rid of players hand when used', function() {
+        player.buildings.push(vomitorium);
+        player.hand = [shrine, dock, jack];
+        useVomitorium(player, pool);
+        expect(player.hand.length).toBe(0);
+      });
+      it('should add hand to pool when used', function() {
+        player.buildings.push(vomitorium);
+        player.hand = [shrine, dock, jack];
+        useVomitorium(player, pool);
+        expect(pool.green).toBe(1);
+        expect(pool.black).toBe(1);
+        expect(pool.red).toBe(1);
+      });
+    });
+
+    describe('stairway', function() {
+      var player;
+      var stairway;
+      var canAddToStructure;
+      var latrine;
+      var palace;
+      var hasAbilityToUse;
+      var influence;
+      var game;
+      beforeEach(function() {
+        player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        stairway = {name: 'Stairway', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'purple'};
+        canAddToStructure = actions.canAddToStructure;
+        latrine = {name: 'Latrine', color: 'yellow', done: true, materials: [], selected: false, copy:2, siteColor: 'yellow'};
+        hasAbilityToUse = actions.hasAbilityToUse;
+        influence = actions.influence;
+        game = {};
+        game.players = [player];
+        palace = {name: 'Palace', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'purple'};
+      });
+      it('shouldnt let you add to opponents finished structure thats not yours without a stairway', function() {
+        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(false);
+      });
+      it('shouldnt let you add to opponents unfinished structure with stairway', function() {
+        player.buildings.push(stairway);
+        latrine.done = false;
+        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(false);
+      });
+      it('should let you add to opponents finished structure with a stairway', function() {
+        player.buildings.push(stairway);
+        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(true);
+        expect(canAddToStructure(palace, player, 'purple', game)).toBe(true);
+        expect(canAddToStructure(palace, player, 'purple', game)).toBe(false);
+      });
+      it('you should have ability to use opponents structure after adding material', function() {
+        expect(hasAbilityToUse('Latrine', player)).toBeFalsy();
+        player.buildings.push(stairway);
+        canAddToStructure(latrine, player, 'yellow', game);
+        expect(hasAbilityToUse('Latrine', player)).toBeTruthy();
+      });
+      it('shouldnt change your influence after giving you ability to use opponents structure', function() {
+        player.buildings.push(stairway);
+        var before = influence(player);
+        canAddToStructure(latrine, player, 'yellow', game);
+        expect(influence(player)).toBe(before);
+      });
+      it('shouldnt be possible to add to opponents blank building', function() {
+        player.buildings.push(stairway);
+        latrine.color = 'blank';
+        latrine.siteColor = 'blank';
+        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(false);
+      });
+      it('should set add structure name to games public buildings', function() {
+        player.buildings.push(stairway);
+        canAddToStructure(latrine, player, 'yellow', game);
+        expect(player.publicBuildings).toBeDefined();
       });
     });
   });

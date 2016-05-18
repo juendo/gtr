@@ -57,9 +57,11 @@ app.controller('gtrController', function($scope, socket, actions) {
     meta.started = true;
     for (var i = 0; i < game.players.length; i++) {
       game.pool[game.deck.pop().color]++;
-      while (game.players[i].hand.length < 5) {
+      while (game.players[i].hand.length < 4) {
         game.players[i].hand.push(game.deck.pop());
       }
+      game.players[i].hand.push({name: 'Jack', color: 'black'});
+      game.pool['black']--;
     }
     meta.leader = Math.floor(Math.random() * (game.players.length));
     meta.currentPlayer = meta.leader;
@@ -177,7 +179,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
     if (action != undefined && 
           (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.think(player, game.deck);
+      acted = actions.think(player, game);
     }
 
     //if (acted) useAction(player, game, meta);
@@ -190,7 +192,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
     if (action != undefined && 
           (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.takeJack(player, game);
+      acted = actions.takeJack(player, game, meta);
     }
 
     if (acted) useAction(player, game, meta);
@@ -212,16 +214,16 @@ app.controller('gtrController', function($scope, socket, actions) {
     }
     if (data.card) {
       if (action.kind == 'Craftsman') {
-        acted = actions.fillStructureFromHand(structure, player, data, meta);
+        acted = actions.fillStructureFromHand(structure, player, data, meta, game);
       } else {
         player.hand.push(data.card);
       }
     } 
     else if (data.material && action.kind == 'Architect') {
-      acted = actions.fillStructureFromStockpile(structure, player, data, meta);
+      acted = actions.fillStructureFromStockpile(structure, player, data, meta, game);
     }
     else if (data.color && action.kind == 'Architect') {
-      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game.pool);
+      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game);
     }
     if (acted) useAction(player, game, meta);
   }
@@ -265,6 +267,32 @@ app.controller('gtrController', function($scope, socket, actions) {
     if (acted) useAction(player, game, meta);
   }
 
+  $scope.vomitorium = function(player, pool) {
+    var action = player.actions[0];
+    if (action != undefined 
+      && (action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow')) {
+      actions.vomitorium(player, pool);
+    }
+  }
+
+  $scope.prison = function(player, building, opponent, index, game, meta) {
+    var action = player.actions[0];
+    var acted = false;
+    if (action != undefined
+      && action.kind == 'Prison') {
+      acted = actions.prison(player, building, opponent, index);
+    }
+    if (acted) useAction(player, game, meta);
+  }
+
+  $scope.hasStairway = function(player) {
+    return actions.hasAbilityToUse('Stairway', player);
+  }
+
+  $scope.hasAbilityToUseWithoutPublicBuildings = function(name, player) {
+    return actions.hasAbilityToUseWithoutPublicBuildings(name, player);
+  }
+
   // remove a dragging card from hand
   $scope.removeFromHand = function(player, data, evt) {
     player.hand.splice(data.index, 1);
@@ -282,15 +310,26 @@ app.controller('gtrController', function($scope, socket, actions) {
     return actions.score(player);
   };
 
+  $scope.clienteleLimit = function(player) {
+    return actions.clienteleLimit(player);
+  };
+
+  $scope.vaultLimit = function(player) {
+    return actions.vaultLimit(player);
+  }
+
   // META ACTIONS ---------------------------------------------------------------------------------------------------
 
   // uses action of current player and determines who is to act next
   useAction = function(player, game, meta) {
     // spend action of current player
-    var action = player.actions[0];
-    player.actions.shift();
+    var action = player.actions.shift();
+    while (!!player.actions[0] 
+       && player.actions[0].shouldBeRemovedUnlessPlayerHasAqueduct 
+      && !actions.hasAbilityToUse('Aqueduct', player)) {
+      player.actions.shift();
+    }
     var newAction = player.actions[0];
-    console.log(action);
 
     if (isDragging) isDragging = false;
 
@@ -318,7 +357,7 @@ app.controller('gtrController', function($scope, socket, actions) {
       return nextToAct(game, meta);
     }
 
-    // if they have just led or followed, they dont go again
+    // if they have just led or followed or used the vomitorium, they dont go again
     if (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Jack') {
       return nextToAct(game, meta);
     }
@@ -382,7 +421,8 @@ app.controller('gtrController', function($scope, socket, actions) {
       'Patron' : '8E2170',
       'Merchant' : '02AEDE',
       'Rome Demands' : 'FFF',
-      'Think' : 'FFF'
+      'Think' : 'FFF',
+      'Prison' : 'FFF'
     }
   $scope.materials = 
     { 'yellow' : 'rubble',

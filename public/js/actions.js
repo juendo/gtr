@@ -18,7 +18,8 @@ app.factory('actions', function ($rootScope) {
       'blue' : 'stone'
     };
   var colorValues = 
-    { 'yellow' : 1,
+    { 'blank' : 0,
+      'yellow' : 1,
       'green' : 1,
       'grey' : 2,
       'red' : 2,
@@ -79,13 +80,52 @@ app.factory('actions', function ($rootScope) {
     }
   };
 
-  var canAddToStructure = function(structure, player, color) {
+  var canAddToStructure = function(structure, player, color, game) {
+
+    var stairway = hasAbilityToUse('Stairway', player);
+
+    // check if structure belongs to the player
+    var belongsToPlayer = false;
+    player.buildings.forEach(function(building) {
+      if (building == structure) {
+        belongsToPlayer = true;
+      }
+    });
+    if (!belongsToPlayer && (!stairway || !structure.done)) return false;
+
     var scriptorium = hasAbilityToUse('Scriptorium', player);
     var road = hasAbilityToUse('Road', player);
-    return !structure.done 
-        && (structure.siteColor == color 
-            || scriptorium && color == 'purple'
-            || road && structure.siteColor == 'blue');
+
+    var canAdd = (structure.siteColor == color 
+                || scriptorium && color == 'purple'
+                || road && structure.siteColor == 'blue');
+
+    if (stairway && !belongsToPlayer) {
+
+      if (!structure.done || !canAdd) return false;
+
+      var alreadyPublic = false;
+
+      game.players.forEach(function(p) {
+        if (p.publicBuildings) {
+          var containsIt = false;
+          p.publicBuildings.forEach(function(b) {
+            if (b == structure.name) containsIt = true;
+          });
+          if (!containsIt) {
+            p.publicBuildings.push(structure.name);
+          } else {
+            alreadyPublic = true;
+          }
+        } else {
+          p.publicBuildings = [structure.name];
+        }
+      });
+      
+      return !!canAdd && !alreadyPublic;
+    } else {
+      return canAdd && !structure.done;
+    }
   };
 
   var checkIfComplete = function(structure, player, meta, actionType) {
@@ -98,7 +138,7 @@ app.factory('actions', function ($rootScope) {
       structure.done = true;
       if (structure.name == 'Amphitheatre') {
         for (var i = 0; i < calculateInfluence(player); i++) {
-          player.actions.splice(0, 0, {kind: 'Craftsman', description: 'CRAFTSMAN'});
+          player.actions.splice(1, 0, {kind: 'Craftsman', description: 'CRAFTSMAN'});
         }
       } 
       else if (structure.name == 'Catacomb') {
@@ -106,34 +146,38 @@ app.factory('actions', function ($rootScope) {
       }
       else if (structure.name == 'Foundry') {
         for (var i = 0; i < calculateInfluence(player); i++) {
-          player.actions.splice(0, 0, {kind: 'Laborer', description: 'LABORER'});
+          player.actions.splice(1, 0, {kind: 'Laborer', description: 'LABORER'});
         }
       }
       else if (structure.name == 'Garden') {
         for (var i = 0; i < calculateInfluence(player); i++) {
-          player.actions.splice(0, 0, {kind: 'Patron', description: 'PATRON'});
+          player.actions.splice(1, 0, {kind: 'Patron', description: 'PATRON'});
         }
       }
       else if (structure.name == 'School') {
         for (var i = 0; i < calculateInfluence(player); i++) {
-          player.actions.splice(0, 0, {kind: 'Think', description: 'THINK'});
+          player.actions.splice(1, 0, {kind: 'Think', description: 'THINK'});
         }
       }
       else if (structure.name == 'CircusMaximus'
             && player.pending.length > 0) {
         addClientActions(player, actionType == 'Craftsman' ? 'green' : 'grey');
       }
+      else if (structure.name == 'Prison') {
+        player.actions.splice(1, 0, {kind: 'Prison', description: 'STEAL BUILDING'});
+      }
     }
   };
 
   var calculateInfluence = function(player) {
     var inf = 2;
-      player.buildings.forEach(function(building) {
-        if (building.done) {
-          inf += colorValues[building.siteColor];
-        }
-      }, this);
-      return inf;
+    if (player.influenceModifier) inf += player.influenceModifier;
+    player.buildings.forEach(function(building) {
+      if (building.done) {
+        inf += colorValues[building.siteColor];
+      }
+    }, this);
+    return inf;
   };
 
   var clienteleLimit = function(player) {
@@ -165,6 +209,26 @@ app.factory('actions', function ($rootScope) {
   };
 
   var hasAbilityToUse = function(building, player) {
+    // check public buildings first
+    if (player.publicBuildings) {
+      var isPublic = false;
+      player.publicBuildings.forEach(function(pb) {
+        if (pb == building) isPublic = true;
+      });
+      if (isPublic) return true;
+    }
+    var hasGate = false;
+    player.buildings.forEach(function(structure) {
+      if (structure.done && structure.name == 'Gate') hasGate = true;
+    }, this);
+    var has = null;
+    player.buildings.forEach(function(structure) {
+      if ((structure.done || (structure.color == 'purple' && hasGate)) && structure.name == building) has = structure;
+    }, this);
+    return has;
+  };
+
+  var hasAbilityToUseWithoutPublicBuildings = function(building, player) {
     var hasGate = false;
     player.buildings.forEach(function(structure) {
       if (structure.done && structure.name == 'Gate') hasGate = true;
@@ -189,10 +253,42 @@ app.factory('actions', function ($rootScope) {
     }
   };
 
+  var checkLatrine = function(player, pool) {
+    // extract the cards the player has selected
+
+    var latrine = hasAbilityToUse('Latrine', player);
+
+    if (!latrine) return false;
+
+    var selectedCards = [];
+    var index = 0;
+    var location = 0;
+    player.hand.forEach(function(card) {
+      card.selected ? selectedCards.push(card) : null;
+      card.selected ? location = index++ : index++;
+    }, this);
+
+    if (selectedCards.length > 1) return false;
+    else if (selectedCards.length == 0) return false;
+    else if (selectedCards.length == 1) {
+      player.hand.splice(location, 1);
+      pool[selectedCards[0].color]++;
+      return true;
+    }
+  };
+
   return {
+
+    checkLatrine: function(player, pool) {
+      return checkLatrine(player, pool);
+    },
 
     hasAbilityToUse: function(building, player) {
       return hasAbilityToUse(building, player);
+    },
+
+    hasAbilityToUseWithoutPublicBuildings: function(building, player) {
+      return hasAbilityToUseWithoutPublicBuildings(building, player);
     },
 
     score: function(player) {
@@ -207,8 +303,8 @@ app.factory('actions', function ($rootScope) {
       return validSelection(player, selectedCards, color);
     },
 
-    canAddToStructure: function(structure, player, color) {
-      return canAddToStructure(structure, player, color);
+    canAddToStructure: function(structure, player, color, game) {
+      return canAddToStructure(structure, player, color, game);
     },
 
     checkIfComplete: function(structure, player, meta, actionType) {
@@ -229,6 +325,20 @@ app.factory('actions', function ($rootScope) {
 
     influence: function(player) {
       return calculateInfluence(player);
+    },
+
+    vomitorium: function(player, pool) {
+      var vom = hasAbilityToUse('Vomitorium', player);
+      if (vom) {
+        var cards = player.hand;
+        player.hand = [];
+        cards.forEach(function(card) {
+          pool[card.color]++;
+        });
+        player.actions[0].description = 'THINK';
+        return true;
+      }
+      else return false;
     },
 
     romeDemands: function(player, game, meta, data, action) {
@@ -353,17 +463,22 @@ app.factory('actions', function ($rootScope) {
       }
     },
 
-    think: function(player, deck) {
-      player.hand.push(deck.pop());
-      while (player.hand.length < handLimit(player) && deck.length > 0) {
-        player.hand.push(deck.pop());
+    think: function(player, game, meta) {
+      // check latrine
+
+      checkLatrine(player, game.pool);
+
+      player.hand.push(game.deck.pop());
+      while (player.hand.length < handLimit(player) && game.deck.length > 0) {
+        player.hand.push(game.deck.pop());
       }
-      if (deck.length < 1) { meta.finished = true };
+      if (game.deck.length < 1) { meta.finished = true };
       return true;
     },
 
     takeJack: function(player, game) {
       if (game.pool.black > 0) {
+        checkLatrine(player, game.pool);
         player.hand.push({name: 'Jack', color: 'black'});
         game.pool.black--;
         return true;
@@ -384,6 +499,8 @@ app.factory('actions', function ($rootScope) {
           pool[color]--;
           action.takenFromPool = true;
           if (bath) {
+            if (!aqueduct) action.shouldBeRemovedUnlessPlayerHasAqueduct = true;
+            if (action.takenFromHand) player.actions.shift();
             player.actions.splice(0, 0, {kind: roles[color], description: roles[color].toUpperCase()});
             return false;
           }
@@ -398,6 +515,7 @@ app.factory('actions', function ($rootScope) {
           player.hand.splice(data.index, 1);
           action.takenFromHand = true;
           if (bath) {
+            if (action.takenFromPool) player.actions.shift();
             player.actions.splice(0, 0, {kind: roles[data.card.color], description: roles[data.card.color].toUpperCase()});
             return false;
           }
@@ -432,8 +550,8 @@ app.factory('actions', function ($rootScope) {
       return false;
     },
 
-    fillStructureFromHand: function(structure, player, data, meta) {
-      if (canAddToStructure(structure, player, data.card.color)) {
+    fillStructureFromHand: function(structure, player, data, meta, game) {
+      if (canAddToStructure(structure, player, data.card.color, game)) {
         structure.materials.push(data.card.color);
         player.hand.splice(data.index, 1);
         checkIfComplete(structure, player, meta, 'Craftsman');
@@ -446,8 +564,8 @@ app.factory('actions', function ($rootScope) {
       }
     },
 
-    fillStructureFromStockpile: function(structure, player, data, meta) {
-      if (canAddToStructure(structure, player, data.material)) {
+    fillStructureFromStockpile: function(structure, player, data, meta, game) {
+      if (canAddToStructure(structure, player, data.material, game)) {
         structure.materials.push(data.material);
         player.stockpile.splice(data.index, 1);
 
@@ -459,10 +577,10 @@ app.factory('actions', function ($rootScope) {
       }
     },
 
-    fillStructureFromPool: function(structure, player, color, meta, pool) {
-      if (canAddToStructure(structure, player, color)) {
+    fillStructureFromPool: function(structure, player, color, meta, game) {
+      if (canAddToStructure(structure, player, color, game)) {
         structure.materials.push(color);
-        pool[color]--;
+        game.pool[color]--;
 
         checkIfComplete(structure, player, meta, 'Architect');
 
@@ -497,6 +615,19 @@ app.factory('actions', function ($rootScope) {
         }
       }
       return false;
+    },
+
+    prison: function(player, building, opponent, index) {
+      if (building.done) {
+        player.buildings.push(building);
+        if (!player.influenceModifier) player.influenceModifier = -3 - colorValues[building.siteColor];
+        else player.influenceModifier -= (3 + colorValues[building.siteColor]);
+        opponent.buildings.splice(index, 1);
+        if (!opponent.influenceModifier) opponent.influenceModifier = 3 + colorValues[building.siteColor];
+        else opponent.influenceModifier += (3 + colorValues[building.siteColor]);
+        opponent
+      } 
+      return building.done;
     }
   };
 });

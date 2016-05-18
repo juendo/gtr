@@ -1,12 +1,12 @@
 .player-box(
   ng-repeat='player in game.players', 
-  style='background-color: #{{ player == game.players[meta.currentPlayer] ? "232" : "222" }};width:{{100/game.players.length}}%;'
+  style='z-index:{{player == you() ? 0 : -1}};background-color: #{{ player == game.players[meta.currentPlayer] ? "232" : "222" }};width:{{100/game.players.length}}%;'
 )
   .player-clientele-shadow
   .player-clientele
     .client(
-      ng-repeat='client in player.clientele track by $index',
-      style='background-color:#{{ actionColors[client] }};'
+      ng-repeat='x in getArray(clienteleLimit(player)) track by $index',
+      style='background-color:#{{ player.clientele[$index] ? actionColors[player.clientele[$index]] : "222" }};'
     )
   .player-building-area(
     ng-if='!meta.finished',
@@ -14,9 +14,11 @@
   )
     img.building(
       ng-drop='true', 
-      ng-drop-success='(yourTurn() && $parent.$parent.$index == meta.you) ? dragEnded(you(), $data, $event, building, game, meta) : null', 
-      src='images/cards/{{ building.name }}.png', 
-      alt='{{ building.name }}'
+      ng-drop-success='(yourTurn() && ($parent.$parent.$index == meta.you || hasStairway(you()))) ? dragEnded(you(), $data, $event, building, game, meta) : null', 
+      src='images/cards/{{ building.name }}.png',
+      alt='{{ building.name }}',
+      ng-click='(building.name == "Vomitorium" && yourTurn() && $parent.$parent.$index == meta.you) ? vomitorium(you(), game.pool) : ($parent.$parent.$index != meta.you && yourTurn() ? prison(you(), building, player, $index, game, meta) : null)',
+      style='opacity:{{building.transparent ? 0.5 : 1}};'
     )
     .materials-holder(
       style='background:repeating-linear-gradient(-45deg,#FFF,#FFF 7px,#{{colors[building.siteColor]}} 7px,#{{colors[building.siteColor]}} 14px);',
@@ -29,6 +31,17 @@
           ng-repeat='material in building.materials track by $index',
           style='width: {{ 100 / colorValues[building.color] }}%;background-color:#{{ colors[material] }};'
         )
+  .player-building-area(
+    ng-if='!!player.publicBuildings && !meta.finished',
+    ng-repeat='building in player.publicBuildings track by $index'
+  )
+    img.building(
+      ng-if='!hasAbilityToUseWithoutPublicBuildings(building, player)',
+      src='images/cards/{{ building }}.png',
+      alt='{{ building }}',
+      ng-click='(building == "Vomitorium" && yourTurn()) ? vomitorium(you(), game.pool) : null',
+      style='opacity:0.5;'
+    )
   .score-box(
     ng-if='meta.finished'
   )
