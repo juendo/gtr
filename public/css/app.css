@@ -194,11 +194,24 @@ img.hand {
 .front {
     z-index: 1;
 }
-img.deck {
+.deck {
     /*border-radius: 5%;*/
     width: 10%;
     overflow: hidden;
     float:right;height:100%;background-color: none;
+}
+.skip {
+    width: 10%;
+    height: 100%;
+    background-color: #222;
+    color: white;
+    outline: none;
+    border: 8px;
+    border-style: solid;
+    border-color: black;
+    border-radius: 20%;
+    float: right;
+    font-size: 20px;
 }
 #hand {
     float:left;

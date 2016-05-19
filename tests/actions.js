@@ -550,6 +550,8 @@ describe('gtr', function () {
       var action;
       var materialData;
       var handData;
+      var atrium;
+      var deck;
       beforeEach(function() {
         merchant = actions.merchant;
         player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
@@ -560,6 +562,8 @@ describe('gtr', function () {
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
         handData = {index: 0, card: gate};
+        atrium = {name: 'Atrium', color: 'red', done: true, materials: [], selected: false, copy:2, siteColor: 'red'};
+        deck = [gate];
       });
       it('should immediately spend action when you dont have a basilica', function() {
         expect(merchant(player, materialData, action)).toBe(true);
@@ -599,6 +603,26 @@ describe('gtr', function () {
         action.takenFromHand = true;
         expect(merchant(player, handData, action)).toBe(false);
         expect(player.vault.length).toBe(0);
+      });
+      it('with atrium should take a material from deck', function() {
+        player.buildings.push(atrium);
+        expect(merchant(player, {deck: deck, meta: {}}, action)).toBe(true);
+        expect(player.vault.length).toBe(1);
+      });
+      it('without atrium shouldnt take a material from deck', function() {
+        expect(merchant(player, {deck: deck, meta: {}}, action)).toBe(false);
+        expect(player.vault.length).toBe(0);
+      });
+      it('with atrium shouldnt take a material from deck if already have taken from deck/stockpile', function() {
+        player.buildings.push(atrium);
+        action.takenFromStockpile = true;
+        expect(merchant(player, {deck: deck, meta: {}}, action)).toBe(false);
+        expect(player.vault.length).toBe(0);
+      });
+      it('with atrium should set taken from stockpile to true', function() {
+        player.buildings.push(atrium);
+        merchant(player, {deck: deck, meta: {}}, action)
+        expect(action.takenFromStockpile).toBe(true);
       });
     });
 

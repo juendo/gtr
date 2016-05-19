@@ -38,10 +38,17 @@
       ng-drag-data=
         '{color:color}',
       ng-repeat=
-        'color in poolColors', 
+        'color in poolColors',
       ng-click=
         'yourTurn() ? poolClicked(you(), color, game, meta) : null',
       style=
         'background-color:#{{ colors[color] }}; color: white;background:repeating-linear-gradient(45deg,#{{colors[color]}},#{{colors[color]}} 7px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "000"}} 7px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "000"}} 14px)'
     )
       | {{ game.pool[color] > 0 ? game.pool[color] : "" }}
+  button.skip(
+    ng-if=
+      'yourTurn() && canSkipCurrentAction(you())',
+    ng-click=
+      'yourTurn() ? skipAction(you(), game, meta) : null'
+  )
+    | {{ you().actions[0] && you().actions[0].kind == 'Rome Demands' ? "GLORY TO ROME" : "SKIP ACTION"}}

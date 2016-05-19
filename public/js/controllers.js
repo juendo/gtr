@@ -181,9 +181,38 @@ app.controller('gtrController', function($scope, socket, actions) {
           (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
       acted = actions.think(player, game);
     }
+    else if (action.kind == 'Merchant') {
+      acted = actions.merchant(player, {deck: game.deck, meta: meta}, action);
+    }
+    else if (action.kind == 'Patron') {
+      acted = actions.patron(player, null, null, {deck: game.deck, meta: meta}, action);
+    }
 
-    //if (acted) useAction(player, game, meta);
-    useAction(player, game, meta)
+    if (acted) useAction(player, game, meta);
+  }
+
+  $scope.skipAction = function(player, game, meta) {
+    useAction(player, game, meta);
+  }
+
+  $scope.canSkipCurrentAction = function(player) {
+    var action = player.actions[0];
+    if (action == undefined) return false;
+    switch (action.kind) {
+      case 'Jack':
+      case 'Lead':
+      case 'Follow':
+      case 'Think':
+        return false;
+      case 'Rome Demands':
+        var hasMaterial = false;
+        player.hand.forEach(function(card) {
+          hasMaterial = hasMaterial || action.material == card.color;
+        });
+        return !hasMaterial || actions.hasAbilityToUse('Palisade', player);
+      default:
+        return true;
+    }
   }
 
   $scope.jackClicked = function(player, game, meta) {
@@ -324,10 +353,16 @@ app.controller('gtrController', function($scope, socket, actions) {
   useAction = function(player, game, meta) {
     // spend action of current player
     var action = player.actions.shift();
-    while (!!player.actions[0] 
-       && player.actions[0].shouldBeRemovedUnlessPlayerHasAqueduct 
-      && !actions.hasAbilityToUse('Aqueduct', player)) {
+    var act = player.actions[0];
+    while (
+        act
+    &&  act.involvesBath
+    &&  act.takenFromPool
+    && (act.takenFromHand || !actions.hasAbilityToUse('Aqueduct', player))
+    && (act.takenFromDeck || !actions.hasAbilityToUse('Bar', player)))
+    {
       player.actions.shift();
+      act = player.actions[0];
     }
     var newAction = player.actions[0];
 

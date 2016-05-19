@@ -489,8 +489,11 @@ app.factory('actions', function ($rootScope) {
 
     patron: function(player, color, pool, data, action) {
       if (player.clientele.length < clienteleLimit(player)) {
+
         var bath = hasAbilityToUse('Bath', player);
         var aqueduct = hasAbilityToUse('Aqueduct', player);
+        var bar = hasAbilityToUse('Bar', player);
+
         if (
             pool != null
         && !action.takenFromPool) 
@@ -499,28 +502,49 @@ app.factory('actions', function ($rootScope) {
           pool[color]--;
           action.takenFromPool = true;
           if (bath) {
-            if (!aqueduct) action.shouldBeRemovedUnlessPlayerHasAqueduct = true;
-            if (action.takenFromHand) player.actions.shift();
+            action.involvesBath = true;
+            if (action.takenFromHand && action.takenFromDeck) player.actions.shift();
             player.actions.splice(0, 0, {kind: roles[color], description: roles[color].toUpperCase()});
             return false;
           }
-          return !aqueduct || !!action.takenFromHand;
+          return (!bar || !!action.takenFromDeck) && (!aqueduct || !!action.takenFromHand);
         } 
         else if (
-            data != null
-        && !action.takenFromHand 
+            data
+        &&  data.card
+        && !action.takenFromHand
         &&  aqueduct) 
         {
           player.clientele.push(roles[data.card.color]);
           player.hand.splice(data.index, 1);
           action.takenFromHand = true;
           if (bath) {
-            if (action.takenFromPool) player.actions.shift();
+            action.involvesBath = true;
+            if (action.takenFromPool && action.takenFromDeck) player.actions.shift();
             player.actions.splice(0, 0, {kind: roles[data.card.color], description: roles[data.card.color].toUpperCase()});
             return false;
           }
-          return !!action.takenFromPool;
-        } 
+          return !!action.takenFromPool && (!bar || !!action.takenFromDeck);
+        }
+        else if (
+            data
+        &&  data.deck
+        &&  data.deck.length > 1
+        && !action.takenFromDeck
+        &&  bar)
+        {
+          var col = data.deck.pop().color;
+          player.clientele.push(roles[col]);
+          if (data.deck.length == 0) data.meta.finished = true;
+          action.takenFromDeck = true;
+          if (bath) {
+            action.involvesBath = true;
+            if (action.takenFromPool && action.takenFromHand) player.actions.shift();
+            player.actions.splice(0, 0, {kind: roles[col], description: roles[col].toUpperCase()});
+            return false;
+          }
+          return !!action.takenFromPool && (!aqueduct || !!action.takenFromHand);
+        }
       }
       return false;
     },
@@ -594,6 +618,8 @@ app.factory('actions', function ($rootScope) {
       if (player.vault.length < vaultLimit(player)) {
 
         var basilica = hasAbilityToUse('Basilica', player);
+        var atrium = hasAbilityToUse('Atrium', player);
+
         if (
             data.material
         && !action.takenFromStockpile)
@@ -612,6 +638,17 @@ app.factory('actions', function ($rootScope) {
           player.hand.splice(data.index, 1);
           action.takenFromHand = true;
           return !!action.takenFromStockpile;
+        }
+        else if (
+            atrium
+        &&  data.deck
+        &&  data.deck.length > 0
+        && !action.takenFromStockpile)
+        {
+          player.vault.push(data.deck.pop().color);
+          if (data.deck.length == 0) data.meta.finished = true;
+          action.takenFromStockpile = true;
+          return !basilica || !!action.takenFromHand;
         }
       }
       return false;
