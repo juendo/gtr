@@ -619,7 +619,7 @@ describe('gtr', function () {
         expect(merchant(player, {deck: deck, meta: {}}, action)).toBe(false);
         expect(player.vault.length).toBe(0);
       });
-      it('with atrium should set taken from stockpile to true', function() {
+      it('with atrium taking from deck should set actions taken from stockpile to true', function() {
         player.buildings.push(atrium);
         merchant(player, {deck: deck, meta: {}}, action)
         expect(action.takenFromStockpile).toBe(true);
@@ -756,16 +756,18 @@ describe('gtr', function () {
       var hasAbilityToUse;
       var influence;
       var game;
+      var fillStructureFromStockpile;
       beforeEach(function() {
-        player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        player = {name:"",buildings:[],hand:[latrine],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
         stairway = {name: 'Stairway', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'purple'};
         canAddToStructure = actions.canAddToStructure;
         latrine = {name: 'Latrine', color: 'yellow', done: true, materials: [], selected: false, copy:2, siteColor: 'yellow'};
         hasAbilityToUse = actions.hasAbilityToUse;
         influence = actions.influence;
-        game = {};
+        game = {sites: {'red':6}, players: [player, {}]};
         game.players = [player];
         palace = {name: 'Palace', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'purple'};
+        fillStructureFromStockpile = actions.fillStructureFromStockpile;
       });
       it('shouldnt let you add to opponents finished structure thats not yours without a stairway', function() {
         expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(false);
@@ -803,6 +805,17 @@ describe('gtr', function () {
         player.buildings.push(stairway);
         canAddToStructure(latrine, player, 'yellow', game);
         expect(player.publicBuildings).toBeDefined();
+      });
+      it('should be in addition', function() {
+        player.buildings.push(stairway);
+        player.buildings.push(palace);
+        player.stockpile.push('purple');
+        player.stockpile.push('purple');
+        var unfinishedPalace = palace;
+        unfinishedPalace.done = false;
+        var action = {kind:'Architect'};
+        expect(fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
+        expect(fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(true);
       });
     });
   });

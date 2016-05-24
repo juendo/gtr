@@ -10,7 +10,6 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // message received indicating that another player has acted
   socket.on('change', function (data) {
-    console.log(data);
     $scope.meta.started = true;
     $scope.game = data.game;
     $scope.meta.leader = data.leader;
@@ -53,7 +52,6 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // when start game is pressed
   $scope.start = function(meta, game) {
-    console.log('start');
     meta.started = true;
     for (var i = 0; i < game.players.length; i++) {
       game.pool[game.deck.pop().color]++;
@@ -66,7 +64,6 @@ app.controller('gtrController', function($scope, socket, actions) {
     meta.leader = Math.floor(Math.random() * (game.players.length));
     meta.currentPlayer = meta.leader;
     game.players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
-    console.log(game);
     update();
   }
 
@@ -107,7 +104,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   }
 
   // the cards in the deck
-  var cards = [{name: 'Academy', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Amphitheatre', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Aqueduct', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Archway', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Atrium', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Basilica', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Bath', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bridge', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Catacomb', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'CircusMaximus', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Crane', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Crane', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'DomusAurea', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'ForumRomanum', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Foundry', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Fountain', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Garden', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Gate', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'LudusMagnus', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Palace', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Prison', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'School', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Scriptorium', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Sewer', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Stairway', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Statue', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Storeroom', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Temple', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Tower', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Tribunal', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Villa', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Vomitorium', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Wall', color: 'grey', done: false, materials: [], selected: false, copy:1}];
+  var cards = [{name: 'Academy', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Amphitheatre', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Aqueduct', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Archway', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Atrium', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Basilica', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Bath', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bridge', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Catacomb', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'CircusMaximus', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Circus', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Circus', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Colosseum', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Forum', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Foundry', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Fountain', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Garden', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Gate', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'LudusMagnus', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Palace', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Prison', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'School', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Scriptorium', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Sewer', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Stairway', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Statue', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Storeroom', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Temple', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Tower', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Senate', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Villa', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Vomitorium', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Wall', color: 'grey', done: false, materials: [], selected: false, copy:1}];
   var cards2 = [];
   var cards3 = [];
   cards.forEach(function(card) {
@@ -119,7 +116,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   $scope.game.deck = shuffle(cards.concat(cards2).concat(cards3));
 
   $scope.yourTurn = function() {
-    return $scope.meta.currentPlayer == $scope.meta.you;
+    return $scope.meta.currentPlayer == $scope.meta.you && !$scope.meta.finished;
   }
 
   $scope.you = function() {
@@ -168,6 +165,7 @@ app.controller('gtrController', function($scope, socket, actions) {
         acted = actions.layFoundation(player, game, meta, data, action);
       }
       if (acted) useAction(player, game, meta);
+      if (actions.checkIfGameOver(game, meta)) update();
     }   
   }
 
@@ -179,7 +177,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
     if (action != undefined && 
           (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.think(player, game);
+      acted = actions.think(player, game, meta);
     }
     else if (action.kind == 'Merchant') {
       acted = actions.merchant(player, {deck: game.deck, meta: meta}, action);
@@ -187,15 +185,19 @@ app.controller('gtrController', function($scope, socket, actions) {
     else if (action.kind == 'Patron') {
       acted = actions.patron(player, null, null, {deck: game.deck, meta: meta}, action);
     }
+    else if (action.kind == 'Craftsman') {
+      acted = actions.fountain(player, game.deck, meta, action);
+    }
 
     if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
   }
 
   $scope.skipAction = function(player, game, meta) {
     useAction(player, game, meta);
   }
 
-  $scope.canSkipCurrentAction = function(player) {
+  $scope.canSkipCurrentAction = function(player, game) {
     var action = player.actions[0];
     if (action == undefined) return false;
     switch (action.kind) {
@@ -203,13 +205,14 @@ app.controller('gtrController', function($scope, socket, actions) {
       case 'Lead':
       case 'Follow':
       case 'Think':
+      case 'Statue':
         return false;
       case 'Rome Demands':
         var hasMaterial = false;
         player.hand.forEach(function(card) {
           hasMaterial = hasMaterial || action.material == card.color;
         });
-        return !hasMaterial || actions.hasAbilityToUse('Palisade', player);
+        return !hasMaterial || actions.hasAbilityToUse('Wall', player) || (actions.hasAbilityToUse('Palisade', player) && !actions.hasAbilityToUse('Bridge', game.players[action.demander]));
       default:
         return true;
     }
@@ -225,11 +228,11 @@ app.controller('gtrController', function($scope, socket, actions) {
     }
 
     if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
   }
 
   // called when a drag ends over a structure
   $scope.dragEnded = function(player, data, evt, structure, game, meta) {
-    console.log(player);
 
     var action = player.actions[0];
     var acted = false;
@@ -243,18 +246,19 @@ app.controller('gtrController', function($scope, socket, actions) {
     }
     if (data.card) {
       if (action.kind == 'Craftsman') {
-        acted = actions.fillStructureFromHand(structure, player, data, meta, game);
+        acted = actions.fillStructureFromHand(structure, player, data, meta, game, action);
       } else {
         player.hand.push(data.card);
       }
     } 
     else if (data.material && action.kind == 'Architect') {
-      acted = actions.fillStructureFromStockpile(structure, player, data, meta, game);
+      acted = actions.fillStructureFromStockpile(structure, player, data, meta, game, action);
     }
     else if (data.color && action.kind == 'Architect') {
-      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game);
+      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game, action);
     }
     if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
   }
 
   // called when a space in the pool is clicked
@@ -264,7 +268,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     var acted = false;
 
     if (action == undefined || 
-        (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow')) {
+        (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Statue')) {
       return;
     } 
     else if (action.kind == 'Lead') {
@@ -278,9 +282,13 @@ app.controller('gtrController', function($scope, socket, actions) {
     } 
     else if (action.kind == 'Follow') {
       acted = actions.follow(player, game, meta, {card:{name: '', color: color}}, action);
-    } 
+    }
+    else if (action.kind == 'Statue') {
+      acted = actions.statue(player, color, game, meta, action);
+    }
 
     if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
   }
 
   // called when a material in your stockpile is clicked
@@ -294,6 +302,20 @@ app.controller('gtrController', function($scope, socket, actions) {
     }
 
     if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  $scope.pendingClicked = function(player, data, game, meta) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && action.kind == 'Sewer') {
+      acted = actions.sewer(player, data);
+    }
+
+    if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
   }
 
   $scope.vomitorium = function(player, pool) {
@@ -312,6 +334,7 @@ app.controller('gtrController', function($scope, socket, actions) {
       acted = actions.prison(player, building, opponent, index);
     }
     if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
   }
 
   $scope.hasStairway = function(player) {
@@ -321,6 +344,10 @@ app.controller('gtrController', function($scope, socket, actions) {
   $scope.hasAbilityToUseWithoutPublicBuildings = function(name, player) {
     return actions.hasAbilityToUseWithoutPublicBuildings(name, player);
   }
+
+  $scope.hasAbilityToUse = function(building, player) {
+    return actions.hasAbilityToUse(building, player);
+  };
 
   // remove a dragging card from hand
   $scope.removeFromHand = function(player, data, evt) {
@@ -347,12 +374,47 @@ app.controller('gtrController', function($scope, socket, actions) {
     return actions.vaultLimit(player);
   }
 
+  $scope.relevantAction = function(building, action) {
+    switch (building) {
+      case 'Archway':
+      case 'Stairway':
+      return action == 'Architect';
+      case 'Aqueduct':
+      case 'Bar':
+      case 'Bath':
+      return action == 'Patron';
+      case 'Dock':
+      return action == 'Laborer';
+      case 'Fountain':
+      return action == 'Craftsman';
+      case 'Atrium':
+      case 'Basilica':
+      return action == 'Merchant';
+      case 'Bridge':
+      case 'Colosseum':
+      return action == 'Legionary';
+      case 'Wall':
+      case 'Palisade':
+      return action == 'Rome Demands';
+      case 'Palace':
+      return action == 'Think' || action == 'Follow';
+      case 'Latrine':
+      case 'Vomitorium':
+      return action == 'Lead' || action == 'Think' || action == 'Follow';
+      default:
+      return false;
+    }
+  }
+
   // META ACTIONS ---------------------------------------------------------------------------------------------------
 
   // uses action of current player and determines who is to act next
   useAction = function(player, game, meta) {
+    
     // spend action of current player
     var action = player.actions.shift();
+
+    // deal with any bath patrons that are waiting
     var act = player.actions[0];
     while (
         act
@@ -372,11 +434,21 @@ app.controller('gtrController', function($scope, socket, actions) {
     if (newAction == undefined) {
 
       // check if you have used an academy
-      var academy = actions.hasAbilityToUse('Academy', player);
-      if (academy && academy.used) {
-        academy.used = false;
-        return;
+      if (player.usedAcademy) {
+        player.usedAcademy = false;
       }
+      // check if the player has a sewer
+      if (actions.hasAbilityToUse('Sewer', player) && player.pending[0] && !player.usedSewer) {
+        player.actions.push({kind:'Sewer', description:'SEWER'});
+        player.usedSewer = true
+        if (action.kind == 'Legionary') {
+          return nextToAct(game, meta);
+        } else {
+          update();
+          return;
+        }
+      }
+      player.usedSewer = false;
       return nextToAct(game, meta);
     }
 
@@ -403,7 +475,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // sets the current player to the next player with actions, 
   // or advances to the next turn if there is none
   nextToAct = function(game, meta) {
-    // unselect the cards
+
     $scope.you().hand.forEach(function(card) {
       card.selected = false;
     }, this);
@@ -424,6 +496,23 @@ app.controller('gtrController', function($scope, socket, actions) {
     meta.leader = (meta.leader + 1) % players.length;
     meta.currentPlayer = meta.leader;
     players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
+
+    // check for senates and pass on jacks
+    for (var i = 0; i < game.players.length; i++) {
+      for (var j = 0; j < game.players[i].pending.length; j++) {
+        if (game.players[i].pending[j].name == 'Jack') {
+          for (var k = (i + 1) % game.players.length; k != i; k = (k + 1) % game.players.length) {
+            if (actions.hasAbilityToUse('Senate', game.players[k])) {
+              var card = game.players[i].pending.splice(j, 1)[0];
+              card.selected = false;
+              game.players[k].hand.push(card);
+              j--;
+              break;
+            }
+          }
+        }
+      }
+    }
     game.players.forEach(function(player) {
       player.pending.forEach(function(card) {
         game.pool[card.color]++; 
@@ -457,7 +546,23 @@ app.controller('gtrController', function($scope, socket, actions) {
       'Merchant' : '02AEDE',
       'Rome Demands' : 'FFF',
       'Think' : 'FFF',
-      'Prison' : 'FFF'
+      'Prison' : 'FFF',
+      'Sewer' : 'FFF',
+      'Statue' : 'FFF'
+    }
+  $scope.actionBorderColors = 
+    { 'Lead' : '000',
+      'Follow' : '000',
+      'Jack' : '000',
+      'Craftsman' : '2CA73D',
+      'Laborer' : 'F7B628',
+      'Architect' : '9B9D88',
+      'Legionary' : 'E5020C',
+      'Patron' : '8E2170',
+      'Merchant' : '02AEDE',
+      'Rome Demands' : '000',
+      'Think' : '000',
+      'Prison' : '000'
     }
   $scope.materials = 
     { 'yellow' : 'rubble',
@@ -473,7 +578,8 @@ app.controller('gtrController', function($scope, socket, actions) {
       'grey' : '9B9D88',
       'red' : 'E5020C',
       'purple' : '8E2170',
-      'blue' : '02AEDE'
+      'blue' : '02AEDE',
+      'black' : '000'
     }
   $scope.colorValues = 
     { 'yellow' : 1,

@@ -149,6 +149,27 @@ img.hand {
     height:5%;
     position:absolute;
 }
+.pending {
+    background-color: none; 
+    bottom: 5%; 
+    margin-left:5%; 
+    width:95%;
+    height:3%;
+    position:absolute;
+    text-align: center;
+}
+.pending-center {
+    display: inline-block;
+    height: 100%;
+}
+.pending-card {
+    width:20px;
+    height:100%;
+    float:left;
+    margin-right: 4px;
+    border-top-left-radius: 32%;
+    border-top-right-radius: 32%;
+}
 .stockpile-material {
     width:3%;
     height:100%;
