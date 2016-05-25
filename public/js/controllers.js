@@ -40,10 +40,12 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // when create game button is pressed
   $scope.createGame = function(meta, player) {
-    // broadcast to the socket that we want to create a game
-    socket.emit('create', meta.name);
-    player.name = meta.name;
-    meta.created = true;
+    if (meta.name.length > 0 && meta.name.length < 15) {
+      // broadcast to the socket that we want to create a game
+      socket.emit('create', meta.name);
+      player.name = meta.name;
+      meta.created = true;
+    }
   };
 
   // when join game button is pressed
