@@ -14,7 +14,11 @@ angular.module('myApp.directives', []).
     scope: false,
     link: function(scope, elem, attrs) {
       $(elem).mouseleave(function(event) {
-        $('.front').removeClass('front');});}};})
+        $('.front').removeClass('front');
+      });
+    }
+  };
+})
 
 .directive('ngHoverCard', function() {
   return {
@@ -24,9 +28,16 @@ angular.module('myApp.directives', []).
       $(elem).mousemove(function(event) {
         if (event.pageX - elem.offset().left > scope.spacing) {
           elem.removeClass('front');
-          elem.next().addClass('front');}});
+          elem.next().addClass('front');
+        }
+      });
       $(elem).mouseleave(function() {
-        elem.removeClass('front');});
+        elem.removeClass('front');
+      });
       $(elem).mouseenter(function() {
         $('.front').removeClass('front');
-        $(elem).addClass('front');});}};});
+        $(elem).addClass('front');
+      });
+    }
+  };
+});

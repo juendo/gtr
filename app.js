@@ -3,14 +3,13 @@
  * Module dependencies
  */
 var express = require('express');
-    var logger = require('morgan');
-    var methodOverride = require('method-override');
-    var session = require('express-session');
-    var bodyParser = require('body-parser');
-    var multer = require('multer');
-    var errorHandler = require('errorhandler');
+var logger = require('morgan');
+var methodOverride = require('method-override');
+var session = require('express-session');
+var bodyParser = require('body-parser');
+var multer = require('multer');
+var errorHandler = require('errorhandler');
 var routes = require('./routes'),
-  api = require('./routes/api'),
   http = require('http'),
   path = require('path');
 
@@ -50,14 +49,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // serve index and view partials
 app.get('/', routes.index);
-app.get('/game', routes.game);
 
-// JSON API
-app.get('/api/name', api.name);
-
-
+var s = require('./routes/socket');
+var ss = s(io);
 // Socket.io Communication
-io.sockets.on('connection', require('./routes/socket'));
+io.sockets.on('connection', ss);
 
 /**
  * Start Server

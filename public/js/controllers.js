@@ -26,14 +26,16 @@ app.controller('gtrController', function($scope, socket, actions) {
   // when you are accepted into an existing game
   socket.on('accepted', function(players) {
     window.history.pushState('page2', 'Title', '/' + $scope.meta.room);
-    $scope.game.players = players;
+    $scope.game.players = players.map(function(name) {
+      return {name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+    });
     $scope.meta.you = players.length - 1;
     $scope.meta.created = true;
   });
 
   // when another player joins your game
-  socket.on('joined', function(player) {
-    $scope.game.players.push(player);
+  socket.on('joined', function(name) {
+    $scope.game.players.push({name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]});
   });
 
   // GAME STATE functions ------------------------------------------------------------------------------------
@@ -53,6 +55,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // when start game is pressed
   $scope.start = function(meta, game) {
+    if (game.players.length < 2) return;
     meta.started = true;
     for (var i = 0; i < game.players.length; i++) {
       game.pool[game.deck.pop().color]++;

@@ -23,6 +23,7 @@ img.hand {
     height: 68%;
     float: left;
     position: relative;
+
 }
 .player-title {
     width: 100%;
@@ -79,13 +80,28 @@ img.hand {
     -ms-transform: translateY(-50%);
     transform: translateY(-50%);
 }
+.player-action-container {
+    position: absolute;
+    width: 95%;
+    height: 100%;
+    margin-left: 5%;
+}
 .score-box {
-    width:95%;
+    width: 95%;
     height: 95%;
-    float:right;
-    font-size: 50px;
+    float: right;
+    position: absolute;
+    top: 5%;
+    margin-left: 5%;
     color: white;
     text-align: center;
+    z-index: 1;
+}
+.score {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-size: 50px;
 }
 .player-clientele, .player-clientele-shadow {
     height: 100%;
@@ -94,7 +110,6 @@ img.hand {
     position: relative;
     background-color: black;
     float: left;
-    overflow: scroll;
 }
 .player-clientele-shadow {
     /*box-shadow: 0px 0px 5px #AAA;*/
@@ -111,13 +126,10 @@ img.hand {
     border-color: black;
 }
 .player-building-area {
-    width: 20%;
+    width: 23.75%;
     height: auto;
     display: inline-block;
-    padding: 1% 0 1% 1%;
-    margin: 0.8%;
-    margin-bottom: 3%;
-
+    padding: 1%;
 }
 .building {
     width: 100%;
@@ -142,20 +154,26 @@ img.hand {
     height:10px;float:left;
 }
 .stockpile {
-    background-color: #333; 
     bottom: 0px; 
     margin-left:5%; 
     width:95%;
     height:5%;
     position:absolute;
+    text-align: center;
+}
+.vault {
+    bottom: 0px;
+    width:100%;
+    height:5.263%;
+    position:absolute;
+    text-align: center;
 }
 .pending {
     background-color: none; 
-    bottom: 5%; 
+    top: 0px; 
     margin-left:5%; 
     width:95%;
     height:3%;
-    position:absolute;
     text-align: center;
 }
 .pending-center {
@@ -166,18 +184,27 @@ img.hand {
     width:20px;
     height:100%;
     float:left;
-    margin-right: 4px;
-    border-top-left-radius: 32%;
-    border-top-right-radius: 32%;
+    margin-right: 2px;
+    margin-left: 2px;
+    border-bottom-left-radius: 32%;
+    border-bottom-right-radius: 32%;
 }
 .stockpile-material {
-    width:3%;
-    height:100%;
-    float:left;
-    border-style:solid;
-    border-width:2px;
-    border-color:#333;
-    border-radius: 32%;
+    width: 20px;
+    height: 100%;
+    margin-left: 2px;
+    margin-right: 2px;
+    border-top-right-radius: 32%;
+    display: inline-block;
+    border-top-left-radius: 32%;
+}
+.stockpile-center {
+    height: 60%;
+    display: inline-block;
+}
+.stockpile-padding {
+    height: 40%;
+    width: 100%;
 }
 #bottom-bar {
     width: 100%;
@@ -212,7 +239,7 @@ img.hand {
 .pool-counter:focus {
     outline:0;
 }
-.front {
+img.hand.front {
     z-index: 1;
 }
 .deck {

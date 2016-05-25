@@ -1,13 +1,22 @@
 .player-box(
   ng-repeat='player in game.players', 
-  style='z-index:{{player == you() ? 0 : -1}};background-color: #{{ player == game.players[meta.currentPlayer] ? "232" : "222" }};width:{{100/game.players.length}}%;'
+  style='z-index:{{player == you() ? 0 : -1}};background-color: #{{ player == game.players[meta.currentPlayer] ? "CCC" : "333" }};width:{{100/game.players.length}}%;'
 )
   .player-clientele-shadow
   .player-clientele
     .client(
       ng-repeat='x in getArray(clienteleLimit(player)) track by $index',
-      style='background-color:#{{ player.clientele[$index] ? actionColors[player.clientele[$index]] : "222" }};'
+      style='background-color:#{{ player.clientele[$index] ? actionColors[player.clientele[$index]] : "333" }};'
     )
+  .pending(
+    style='/*background-color: #{{ player == game.players[meta.currentPlayer] ? "DDD" : "444" }}*/'
+  )
+    .pending-center
+      .pending-card(
+        ng-repeat='card in player.pending track by $index',
+        ng-click='yourTurn() && $parent.$index == meta.you ? pendingClicked(you(), {index: $index, card: card}, game, meta) : null',
+        style='background-color:#{{ colors[card.color] }}'
+      )
   .player-building-area(
     ng-if='!meta.finished',
     ng-repeat='building in player.buildings track by $index'
@@ -44,21 +53,26 @@
   .score-box(
     ng-if='meta.finished'
   )
-    | {{ player.winner ? "YOU WIN" : score(player) + " POINTS"}}
-  .pending(
-    ng-if='!!player.pending[0]'
-  )
-    .pending-center
-      .pending-card(
-        ng-repeat='card in player.pending track by $index',
-        ng-click='yourTurn() && $parent.$index == meta.you ? pendingClicked(you(), {index: $index, card: card}, game, meta) : null',
-        style='background-color:#{{ colors[card.color] }}'
-      )
-  .stockpile
-    .stockpile-material(
-      ng-drag='$parent.$index == meta.you',
-      ng-drag-data='{index: $index, material: material}', 
-      ng-repeat='material in player.stockpile track by $index', 
-      ng-click='yourTurn() && $parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game, meta) : null', 
-      style='background-color:#{{ colors[material] }}'
+    .score
+      | {{ player.winner ? "YOU WIN" : score(player) + " POINTS"}}
+    .vault(
+      style='background-color: #{{ player == game.players[meta.currentPlayer] ? "DDD" : "444" }}'
     )
+      .stockpile-padding
+      .stockpile-center
+        .stockpile-material(
+          ng-repeat='material in player.vault track by $index', 
+          style='background-color:#{{ colors[material] }};'
+        )
+  .stockpile(
+    style='background-color: #{{ player == game.players[meta.currentPlayer] ? "DDD" : "444" }}'
+  )
+    .stockpile-padding
+    .stockpile-center
+      .stockpile-material(
+        ng-drag='$parent.$index == meta.you',
+        ng-drag-data='{index: $index, material: material}', 
+        ng-repeat='material in player.stockpile track by $index', 
+        ng-click='yourTurn() && $parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game, meta) : null', 
+        style='background-color:#{{ colors[material] }};'
+      )

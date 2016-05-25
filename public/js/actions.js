@@ -890,7 +890,7 @@ app.factory('actions', function ($rootScope) {
             }
           }
           if (maxIndex >= 0) {
-            game.players[maxIndex].merchantBonus += colorValues[role];
+            game.players[maxIndex].merchantBonus += 3;
           }
         }
       }

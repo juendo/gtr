@@ -4,7 +4,10 @@
   .Absolute-Center.is-Responsive
     .col-sm-12.col-md-10.col-md-offset-1
       .form-group
-        span(
+        div(style='text-align:center;')
+          | {{ meta.room }}
+      .form-group
+        div(
           ng-repeat='player in game.players'
         ) 
           | {{ player.name }}
