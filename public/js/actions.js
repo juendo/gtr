@@ -8,6 +8,14 @@ app.factory('actions', function ($rootScope) {
       'purple' : 'Patron',
       'blue' : 'Merchant'
     };
+  var roleColors = 
+    { 'Laborer' : 'yellow',
+      'Craftsman' : 'green',
+      'Architect' : 'grey',
+      'Legionary' : 'red',
+      'Patron' : 'purple',
+      'Merchant' : 'blue'
+    };
 
   var materials = 
     { 'yellow' : 'rubble',
@@ -401,7 +409,9 @@ app.factory('actions', function ($rootScope) {
       }
       for (var i = (meta.currentPlayer + 1) % game.players.length; i != meta.currentPlayer; i = (i + 1) % game.players.length) {
         game.players[i].actions.splice(0, 0, {kind:'Rome Demands', description:'ROME DEMANDS ' + materials[color].toUpperCase(), demander: meta.currentPlayer, material: color})
-        if (bridge) {
+        var palisade = hasAbilityToUse('Palisade', game.players[i]);
+        var wall = hasAbilityToUse('Wall', game.players[i]);
+        if (bridge && !wall) {
           // loop through that player's stockpile and take a material if one matches
           for (var j = 0; j < game.players[i].stockpile.length; j++) {
             if (game.players[i].stockpile[j] == color) {
@@ -410,11 +420,11 @@ app.factory('actions', function ($rootScope) {
             }
           }
         }
-        if (colosseum) {
+        if (colosseum && !wall && (bridge || !palisade)) {
           // loop through clientele and take if matches and have space
           for (var j = 0; j < game.players[i].clientele.length; j++) {
             if (roles[color] == game.players[i].clientele[j] && game.players[i].vault.length < vaultLimit(player)) {
-              player.vault.push(game.players[i].clientele.splice(j, 1)[0]);
+              player.vault.push(roleColors[game.players[i].clientele.splice(j, 1)[0]]);
               break;
             }
           }
