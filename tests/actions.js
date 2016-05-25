@@ -9,7 +9,6 @@ describe('gtr', function () {
   }));
 
   beforeEach(inject(function ($rootScope, $injector) {
-      //new a $scope
       $scope = $rootScope.$new();
       actions = $injector.get('actions');
       controller = $controller('gtrController', 

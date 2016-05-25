@@ -14,6 +14,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     $scope.game = data.game;
     $scope.meta.leader = data.leader;
     $scope.meta.currentPlayer = data.currentPlayer;
+    $scope.meta.finished = data.finished;
   });
 
   // when the game is first created
@@ -77,7 +78,8 @@ app.controller('gtrController', function($scope, socket, actions) {
       game: $scope.game,
       leader: $scope.meta.leader,
       currentPlayer: $scope.meta.currentPlayer,
-      room: $scope.meta.room
+      room: $scope.meta.room,
+      finished: $scope.meta.finished
     });
   }
 
