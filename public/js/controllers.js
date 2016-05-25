@@ -19,13 +19,11 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // when the game is first created
   socket.on('created', function (data) {
-    window.history.pushState('page2', 'Title', '/' + data.gameid);
     $scope.meta.room = data.gameid;
   });
 
   // when you are accepted into an existing game
   socket.on('accepted', function(players) {
-    window.history.pushState('page2', 'Title', '/' + $scope.meta.room);
     $scope.game.players = players.map(function(name) {
       return {name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
     });

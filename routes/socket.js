@@ -20,6 +20,7 @@ module.exports = function (io) {
         }
         gamesList.gamePlayers[gameid] = [name];
         socket.emit('created', {gameid: gameid});
+       
         socket.join(gameid);
       }
     });
