@@ -134,7 +134,7 @@ describe('gtr', function () {
         game = {sites: {'red':6}, players: [player, {}]};
       });
       it('should append to buildings', function() {
-        data = {index: 0, card: {name: 'Academy', color: 'red', done: false, materials: [], selected: false, copy:2, siteColor: 'red'}};
+        data = {index: 0, color: 'red', card: {name: 'Academy', color: 'red', done: false, materials: [], selected: false, copy:2, siteColor: 'red'}};
         layFoundation(player, game, {}, data, {});
         expect(player.buildings.length).toBe(2);
       });
@@ -317,7 +317,7 @@ describe('gtr', function () {
       });
       it('should add think to end of a players actions if they have an academy when they perform a craftsman to lay a foundation', function() {
         player.buildings.push(academy);
-        var data = {index: 0, card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'}};
+        var data = {index: 0, color: 'red', card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'}};
         layFoundation(player, game, {}, data, {kind:'Craftsman'});
         expect(player.actions[player.actions.length - 1].kind).toBe('Think');
       });
@@ -815,6 +815,93 @@ describe('gtr', function () {
         var action = {kind:'Architect'};
         expect(fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
         expect(fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(true);
+      });
+    });
+    describe('scoring', function() {
+      var checkIfGameOver;
+      var game;
+      var player1;
+      var player2;
+      var player3;
+      var game;
+      var meta;
+      beforeEach(function() {
+        checkIfGameOver = actions.checkIfGameOver;
+        score = actions.score;
+        player1 = {name:"Neil",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        player2 = {name:"Noil",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        player3 = {name:"Niall",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+        game = {players: [player1, player2, player3]};
+        meta = {finished: true};
+      });
+      it('should give 2 each for players with nothing', function() {
+        checkIfGameOver(game, meta);
+        expect(score(player1)).toBe(2);
+        expect(score(player2)).toBe(2);
+        expect(score(player3)).toBe(2);
+      });
+      it('should give add points for vault', function() {
+        player1.vault.push('green');
+        player2.vault.push('green');
+        player3.vault.push('green');
+        checkIfGameOver(game, meta);
+        expect(score(player1)).toBe(3);
+        expect(score(player2)).toBe(3);
+        expect(score(player3)).toBe(3);
+      });
+      it('should add merchant bonus points for vault', function() {
+        player1.vault.push('green');
+        player1.vault.push('green');
+        player2.vault.push('green');
+        player3.vault.push('green');
+        checkIfGameOver(game, meta);
+        expect(score(player1)).toBe(7);
+        expect(score(player2)).toBe(3);
+        expect(score(player3)).toBe(3);
+      });
+      it('should add merchant bonus points for multiple materials', function() {
+        player1.vault.push('green');
+        player1.vault.push('blue');
+        player1.vault.push('purple');
+        player2.vault.push('green');
+        player2.vault.push('green');
+        player2.vault.push('green');
+        player3.vault.push('green');
+        player3.vault.push('green');
+        player3.vault.push('yellow');
+        checkIfGameOver(game, meta);
+        expect(score(player1)).toBe(15);
+        expect(score(player2)).toBe(8);
+        expect(score(player3)).toBe(8);
+      });
+      it('should work with statue', function() {
+        var statue = {name: 'Statue', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'green'};
+        player1.buildings.push(statue);
+        player1.vault.push('green');
+        player1.vault.push('green');
+        player2.vault.push('green');
+        player3.vault.push('green');
+        checkIfGameOver(game, meta);
+        expect(score(player1)).toBe(11);
+        expect(score(player2)).toBe(3);
+        expect(score(player3)).toBe(3);
+      });
+      it('should work with wall', function() {
+        var wall = {name: 'Wall', color: 'grey', done: true, materials: [], selected: false, copy:2, siteColor: 'grey'};
+        player1.buildings.push(wall);
+        player1.stockpile.push('green');
+        player1.stockpile.push('green');
+        player1.stockpile.push('green');
+        player1.stockpile.push('green');
+        player1.stockpile.push('green');
+        player1.vault.push('green');
+        player1.vault.push('green');
+        player2.vault.push('green');
+        player3.vault.push('green');
+        checkIfGameOver(game, meta);
+        expect(score(player1)).toBe(11);
+        expect(score(player2)).toBe(3);
+        expect(score(player3)).toBe(3);
       });
     });
   });

@@ -167,7 +167,8 @@ app.controller('gtrController', function($scope, socket, actions) {
       else if ((action.kind == 'Craftsman'
               || action.kind == 'Architect')
               && data.card.name != 'Jack') {
-        acted = actions.layFoundation(player, game, meta, data, action);
+        acted = actions.singleSelect(player, game, meta, data, action);
+        //acted = actions.layFoundation(player, game, meta, data, action);
       }
       if (acted) useAction(player, game, meta);
       if (actions.checkIfGameOver(game, meta)) update();
@@ -273,7 +274,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     var acted = false;
 
     if (action == undefined || 
-        (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Statue')) {
+        (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Statue' && action.kind != 'Craftsman' && action.kind != 'Architect')) {
       return;
     } 
     else if (action.kind == 'Lead') {
@@ -290,6 +291,9 @@ app.controller('gtrController', function($scope, socket, actions) {
     }
     else if (action.kind == 'Statue') {
       acted = actions.statue(player, color, game, meta, action);
+    }
+    else if (action.kind == 'Craftsman' || action.kind == 'Architect') {
+      acted = actions.prepareToLay(player, color, game, meta, action);
     }
 
     if (acted) useAction(player, game, meta);

@@ -290,7 +290,7 @@ app.factory('actions', function ($rootScope) {
     }
   };
 
-  var meetsForumCritera = function(player) {
+  var meetsForumCriteria = function(player) {
     if (!hasAbilityToUse('Forum', player)) return false;
     var has = {};
     for (var role in roles) {
@@ -439,6 +439,45 @@ app.factory('actions', function ($rootScope) {
       return false;
     },
 
+    singleSelect: function(player, game, meta, data, action) {
+      if (data.card.selected && !action.usedFountain) {
+        data.card.selected = false;
+      } else if (!action.usedFountain) {
+        player.hand.forEach(function(card) {
+          card.selected = false;
+        });
+        data.card.selected = true;
+      }
+      return false;
+    },
+
+    prepareToLay: function(player, color, game, meta, action) {
+      // find the index of the single selected card the player has
+      var index = -1;
+      var card;
+      for (var i = 0; i < player.hand.length; i++) {
+        if (player.hand[i].selected) {
+          if (index > -1) {
+            return false;
+          } else {
+            index = i;
+            card = player.hand[i];
+          } 
+        }
+      }
+      if (index == -1) {
+        return false;
+      }
+
+      if (card.color != color && card.name != 'Statue') {
+        return false;
+      }
+
+      var data = {index: index, card: card, color: color};
+
+      return this.layFoundation(player, game, meta, data, action);
+    },
+
     lead: function(player, game, meta, data, action) {
 
       var color = data.card.color;
@@ -503,9 +542,8 @@ app.factory('actions', function ($rootScope) {
     layFoundation: function(player, game, meta, data, action) {
       var tower = hasAbilityToUse('Tower', player);
       if (
-          6 - game.sites[data.card.color] < game.players.length
-      || (game.sites[data.card.color] > 0 && ((player.actions[1] && player.actions[1].kind == action.kind) || tower))
-      ||  data.card.name == 'Statue') 
+          6 - game.sites[data.color] < game.players.length
+      || (game.sites[data.color] > 0 && ((player.actions[1] && player.actions[1].kind == action.kind) || tower))) 
       {
 
         if (
@@ -530,32 +568,23 @@ app.factory('actions', function ($rootScope) {
 
         // if using an in town site
         if (
-           (6 - game.sites[data.card.color] < game.players.length || tower)
-        &&  data.card.name != 'Statue')
+           (6 - game.sites[data.color] < game.players.length || tower))
         {
-          data.card.siteColor = data.card.color;
+          data.card.siteColor = data.color;
           player.buildings.push(data.card);
           player.hand.splice(data.index, 1);
-          game.sites[data.card.color]--;
+          game.sites[data.color]--;
         }
 
         // else if using an out of town site
-        else if (data.card.name != 'Statue')
+        else
         {
-          data.card.siteColor = data.card.color;
+          data.card.siteColor = data.color;
           player.buildings.push(data.card);
           player.hand.splice(data.index, 1);
-          game.sites[data.card.color]--;
+          game.sites[data.color]--;
           player.actions.splice(1,1);
         }
-
-        // else if laying a statue
-        else 
-        {
-          player.actions.unshift({kind:'Statue', description:'CHOOSE SITE', data: data});
-          return false;
-        }
-        
 
         if (allSitesUsed(game.sites, game.players.length)) {
           meta.finished = true;
@@ -873,10 +902,11 @@ app.factory('actions', function ($rootScope) {
     },
 
     checkIfGameOver: function(game, meta) {
+
       // check if any player meets the critera for a forum victory
       game.players.forEach(function(player) {
         player.merchantBonus = 0;
-        if (meetsForumCritera(player)) {
+        if (meetsForumCriteria(player)) {
           meta.finished = true;
           player.winner = true;
         }
@@ -895,6 +925,7 @@ app.factory('actions', function ($rootScope) {
             });
             if (count > max) {
               maxIndex = i;
+              max = count;
             } else if (count == max) {
               maxIndex = -1;
             }
