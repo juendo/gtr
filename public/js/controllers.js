@@ -77,12 +77,34 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // indicate to other players that there has been a change in game state
   update = function() {
+
+    // reset all glory to rome animation statuses
+    $scope.game.players.forEach(function(player) {
+      if (!$scope.meta.glory || player != $scope.meta.glory) {
+        player.glory1 = false;
+        player.glory2 = false;
+      }
+    });
+
+    // if the player pressed glory to rome
+    if ($scope.meta.glory) {
+      var player = $scope.meta.glory;
+      // trigger glory to rome animation
+      if (player.glory1) {
+        player.glory1 = false;
+        player.glory2 = true;
+      } else {
+        player.glory1 = true;
+        player.glory2 = false;
+      }
+      $scope.meta.glory = null;
+    }
     socket.emit('update', {
       game: $scope.game,
       leader: $scope.meta.leader,
       currentPlayer: $scope.meta.currentPlayer,
       room: $scope.meta.room,
-      finished: $scope.meta.finished
+      finished: $scope.meta.finished,
     });
   }
 
@@ -93,7 +115,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // the game state
   $scope.game = {players:[{name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}],pool:{'yellow':0,'green':0,'red':0,'grey':0,'purple':0,'blue':0,'black':6},deck:[],sites:{'yellow':6,'green':6,'red':6,'grey':6,'purple':6,'blue':6}};
 
-  $scope.meta = { started: false, created: false, finished: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" };
+  $scope.meta = { started: false, created: false, finished: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" , glory: -1};
 
 
   // helper to shuffle the deck
@@ -200,6 +222,9 @@ app.controller('gtrController', function($scope, socket, actions) {
   }
 
   $scope.skipAction = function(player, game, meta) {
+    if (player.actions[0].kind == 'Rome Demands') {
+      meta.glory = player;
+    }
     useAction(player, game, meta);
   }
 

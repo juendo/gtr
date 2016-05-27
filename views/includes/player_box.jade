@@ -2,6 +2,16 @@
   ng-repeat='player in game.players', 
   style='z-index:{{player == you() ? 0 : -1}};background-color: #{{ player == game.players[meta.currentPlayer] ? "CCC" : "333" }};width:{{100/game.players.length}}%;'
 )
+  .glory-to-rome
+    .glory-text(
+      ng-class='{"gtr-hide": player.glory1, "gtr-show": !player.glory1}'
+    )
+      | GLORY TO ROME
+  .glory-to-rome
+    .glory-text(
+      ng-class='{"gtr-hide": player.glory2, "gtr-show": !player.glory2}'
+    )
+      | GLORY TO ROME
   .player-clientele-shadow
   .player-clientele
     .client(

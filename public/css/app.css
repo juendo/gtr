@@ -6,6 +6,27 @@ body {
 }
 * {
     font-family: 'Montserrat';
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+.deck, .hand {
+    cursor: pointer;
+}
+.access-code {
+    -webkit-user-select: initial;
+    -moz-user-select: initial;
+    -ms-user-select: initial;
+    -o-user-select: initial;
+    user-select: initial;
+    text-align:center;
+    cursor: text;
 }
 img.hand {
     height: 92%;
@@ -266,4 +287,31 @@ img.hand.front {
     position: relative;
     height: 100%;
     display: block;
+}
+.glory-to-rome {
+    width: 95%;
+    height: 100%;
+    left: 5%;
+    position: absolute;
+    text-align: center;
+}
+.glory-text {
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 95%;
+    color: inherit;
+    color: transparent;
+}
+.glory-text.gtr-show {
+    opacity: 1;
+}
+.glory-text.gtr-hide {
+    color: black;
+    transition: all linear 1s;
+    -ms-transform: scale(3,3); /* IE 9 */
+    -webkit-transform: scale(3,3); /* Safari */
+    transform: scale(3,3);
+    opacity: 0;
 }
