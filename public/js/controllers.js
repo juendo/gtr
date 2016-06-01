@@ -12,6 +12,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   socket.on('change', function (data) {
     $scope.meta.started = true;
     $scope.game = data.game;
+    $scope.meta.turn = data.turn;
     $scope.meta.leader = data.leader;
     $scope.meta.currentPlayer = data.currentPlayer;
     $scope.meta.finished = data.finished;
@@ -83,7 +84,14 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   $scope.triggerReconnect = function() {
     console.log('triggered reconnect');
-    socket.emit('reconnection', $scope.meta.room);
+    socket.emit('reconnection', {
+      game: $scope.game,
+      leader: $scope.meta.leader,
+      turn: $scope.meta.turn,
+      currentPlayer: $scope.meta.currentPlayer,
+      room: $scope.meta.room,
+      finished: $scope.meta.finished
+    });
   };
 
   $scope.$on('draggable:start', function (data) {
@@ -133,6 +141,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     socket.emit('update', {
       game: $scope.game,
       leader: $scope.meta.leader,
+      turn: ++$scope.meta.turn,
       currentPlayer: $scope.meta.currentPlayer,
       room: $scope.meta.room,
       finished: $scope.meta.finished,
@@ -140,13 +149,12 @@ app.controller('gtrController', function($scope, socket, actions) {
   }
 
   // SCOPE VARIABLES ------------------------------------------------------------------------------------
-  var previouslyConnected = false;
   isDragging = false;
 
   // the game state
   $scope.game = {players:[{name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}],pool:{'yellow':0,'green':0,'red':0,'grey':0,'purple':0,'blue':0,'black':6},deck:[],sites:{'yellow':6,'green':6,'red':6,'grey':6,'purple':6,'blue':6}};
 
-  $scope.meta = { started: false, created: false, finished: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" , glory: -1};
+  $scope.meta = { turn: 0, started: false, created: false, finished: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" , glory: -1};
 
 
   // helper to shuffle the deck
