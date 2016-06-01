@@ -15,7 +15,10 @@ var routes = require('./routes'),
 
 var app = module.exports = express();
 var server = require('http').createServer(app);
-var io = require('socket.io').listen(server);
+var io = require('socket.io')({
+	'transports': ['xhr-polling'],
+	'polling duration': 10
+}).listen(server);
 
 /**
  * Configuration

@@ -77,6 +77,12 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // indicate to other players that there has been a change in game state
   update = function() {
+    /////////////////////////////////////////////////////////////////////////
+    // have update take input parameters, not just send the scope
+    // then send a callback to the server only to update the scope state
+    // once the server has received the game state
+    // in between it should be pending, and not allow input.
+    /////////////////////////////////////////////////////////////////////////
 
     // reset all glory to rome animation statuses
     $scope.game.players.forEach(function(player) {
@@ -224,6 +230,9 @@ app.controller('gtrController', function($scope, socket, actions) {
   $scope.skipAction = function(player, game, meta) {
     if (player.actions[0].kind == 'Rome Demands') {
       meta.glory = player;
+    }
+    if (player.actions[0]) {
+      player.actions[0].skipped = true;
     }
     useAction(player, game, meta);
   }
@@ -494,7 +503,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
     // if the player just used a legionary action, and has no more legionary actions,
     // go to next player
-    if (action.kind == 'Legionary' && newAction.kind != 'Legionary') {
+    if (action.kind == 'Legionary' && !action.skipped && newAction.kind != 'Legionary') {
       return nextToAct(game, meta);
     }
 

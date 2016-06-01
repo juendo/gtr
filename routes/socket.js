@@ -4,6 +4,20 @@ module.exports = function (io) {
   var s = function(socket) {
     socket.on('update', function (data) {
       socket.broadcast.to(data.room).emit('change', data);
+
+
+
+      /////////////////////////////////////////////////////////////////////////
+      // store latest game info for each game in gameStates
+      // track index of each update
+      // have each client confirm they have received the game state
+      // when all clients confirm latest index, delete the record
+      // when a client reconnects, have it load the latest game state
+      /////////////////////////////////////////////////////////////////////////
+
+
+
+
       if (gamesList.gamePlayers[data.room]) {
         delete gamesList.gamePlayers[data.room];
       }
@@ -46,9 +60,11 @@ module.exports = function (io) {
 var gamesList = (function() {
 
   var gamePlayers = {};
+  var gameStates = {};
 
   return {
-    gamePlayers: gamePlayers
+    gamePlayers: gamePlayers,
+    gameStates: gameStates
   };
 
 }());
