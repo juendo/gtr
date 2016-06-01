@@ -11,6 +11,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // message received indicating that another player has acted
   socket.on('change', function (data) {
     if (data.turn < $scope.meta.turn) return update();
+    if (data.turn == $scope.meta.turn) return;
     $scope.meta.started = true;
     $scope.game = data.game;
     $scope.meta.turn = data.turn;
