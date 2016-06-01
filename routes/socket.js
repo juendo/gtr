@@ -56,6 +56,7 @@ module.exports = function (io) {
 
     // get the most recent game state
     socket.on('reconnection', function(room) {
+      socket.join(room);
       socket.emit('change', gamesList.gameStates[room]);
     });
   }
