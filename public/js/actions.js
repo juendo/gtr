@@ -400,6 +400,7 @@ app.factory('actions', function ($rootScope) {
       if (data.card.selected) {
         return false;
       }
+      player.madeDemand = true;
       var bridge = hasAbilityToUse('Bridge', player);
       var colosseum = hasAbilityToUse('Colosseum', player);
       var color = data.card.color;

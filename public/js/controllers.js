@@ -273,9 +273,6 @@ app.controller('gtrController', function($scope, socket, actions) {
     if (player.actions[0].kind == 'Rome Demands') {
       meta.glory = player;
     }
-    if (player.actions[0]) {
-      player.actions[0].skipped = true;
-    }
     useAction(player, game, meta);
   }
 
@@ -527,6 +524,7 @@ app.controller('gtrController', function($scope, socket, actions) {
         player.actions.push({kind:'Sewer', description:'SEWER'});
         player.usedSewer = true
         if (action.kind == 'Legionary') {
+          player.madeDemand = false;
           return nextToAct(game, meta);
         } else {
           update();
@@ -543,9 +541,11 @@ app.controller('gtrController', function($scope, socket, actions) {
       return nextToAct(game, meta);
     }
 
-    // if the player just used a legionary action, and has no more legionary actions,
-    // go to next player
-    if (action.kind == 'Legionary' && !action.skipped && newAction.kind != 'Legionary') {
+    // if the player just used a legionary action, whether skipping or not, 
+    // and has made at least one demand in the current batch of legionary actions,
+    // play moves so the other players can respond to the demand
+    if (action.kind == 'Legionary' && player.madeDemand && newAction.kind != 'Legionary') {
+      player.madeDemand = false;
       return nextToAct(game, meta);
     }
 
