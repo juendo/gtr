@@ -44,7 +44,14 @@ app.controller('gtrController', function($scope, socket, actions) {
   // if reconnecting, request missed data from server
   socket.on('reconnect', function() {
     console.log('reconnect');
-    socket.emit('reconnection', $scope.meta.room);
+    socket.emit('reconnection', {
+      game: $scope.game,
+      leader: $scope.meta.leader,
+      turn: $scope.meta.turn,
+      currentPlayer: $scope.meta.currentPlayer,
+      room: $scope.meta.room,
+      finished: $scope.meta.finished
+    });
   });
 
   // GAME STATE functions ------------------------------------------------------------------------------------
