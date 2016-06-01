@@ -59,7 +59,7 @@ module.exports = function (io) {
       socket.join(data.room);
       // if you are behind in the game, send you the changes
       if (gamesList.gameStates[data.room].turn > data.turn) {
-        socket.emit('change', gamesList.gameStates[room]);
+        socket.emit('change', gamesList.gameStates[data.room]);
         // if you are ahead of the game
       } else {
         gamesList.gameStates[data.room] = data;
