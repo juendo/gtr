@@ -3,7 +3,6 @@ module.exports = function (io) {
 
   var s = function(socket) {
     socket.on('update', function (data) {
-      gamesList.gameStates[data.room] = data;
       socket.broadcast.to(data.room).emit('change', data);
 
 
@@ -57,15 +56,7 @@ module.exports = function (io) {
     // get the most recent game state
     socket.on('reconnection', function(data) {
       socket.join(data.room);
-      // if you are behind in the game, send you the changes
-      if (gamesList.gameStates[data.room].turn > data.turn) {
-        socket.emit('change', gamesList.gameStates[data.room]);
-        // if you are ahead of the game
-      } else {
-        gamesList.gameStates[data.room] = data;
-        socket.broadcast.to(data.room).emit('change', data);
-      }
-      
+      socket.broadcast.to(data.room).emit('change', data);
     });
   }
   return s;
@@ -75,11 +66,9 @@ module.exports = function (io) {
 var gamesList = (function() {
 
   var gamePlayers = {};
-  var gameStates = {};
 
   return {
-    gamePlayers: gamePlayers,
-    gameStates: gameStates
+    gamePlayers: gamePlayers
   };
 
 }());

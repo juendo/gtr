@@ -10,6 +10,7 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // message received indicating that another player has acted
   socket.on('change', function (data) {
+    if (data.turn < $scope.meta.turn) return update();
     $scope.meta.started = true;
     $scope.game = data.game;
     $scope.meta.turn = data.turn;
@@ -151,7 +152,7 @@ app.controller('gtrController', function($scope, socket, actions) {
       turn: ++$scope.meta.turn,
       currentPlayer: $scope.meta.currentPlayer,
       room: $scope.meta.room,
-      finished: $scope.meta.finished,
+      finished: $scope.meta.finished
     });
   }
 
