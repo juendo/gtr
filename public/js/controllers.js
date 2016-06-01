@@ -36,6 +36,16 @@ app.controller('gtrController', function($scope, socket, actions) {
     $scope.game.players.push({name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]});
   });
 
+  socket.on('disconnect', function() {
+    console.log('disconnect');
+  });
+
+  // if reconnecting, request missed data from server
+  socket.on('reconnect', function() {
+    console.log('reconnect');
+    socket.emit('reconnection', $scope.meta.room);
+  });
+
   // GAME STATE functions ------------------------------------------------------------------------------------
 
   // when create game button is pressed
@@ -77,12 +87,22 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // indicate to other players that there has been a change in game state
   update = function() {
+
+
+
+
+
+
     /////////////////////////////////////////////////////////////////////////
     // have update take input parameters, not just send the scope
     // then send a callback to the server only to update the scope state
     // once the server has received the game state
     // in between it should be pending, and not allow input.
     /////////////////////////////////////////////////////////////////////////
+
+
+
+
 
     // reset all glory to rome animation statuses
     $scope.game.players.forEach(function(player) {
@@ -115,7 +135,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   }
 
   // SCOPE VARIABLES ------------------------------------------------------------------------------------
-
+  var previouslyConnected = false;
   isDragging = false;
 
   // the game state

@@ -3,6 +3,7 @@ module.exports = function (io) {
 
   var s = function(socket) {
     socket.on('update', function (data) {
+      gamesList.gameStates[data.room] = data;
       socket.broadcast.to(data.room).emit('change', data);
 
 
@@ -51,6 +52,11 @@ module.exports = function (io) {
         socket.emit('accepted', gamesList.gamePlayers[data.room]);
         socket.broadcast.to(data.room).emit('joined', data.name);
       }
+    });
+
+    // get the most recent game state
+    socket.on('reconnection', function(room) {
+      socket.emit('change', gamesList.gameStates[room]);
     });
   }
   return s;
