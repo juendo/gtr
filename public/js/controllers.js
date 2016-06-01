@@ -11,7 +11,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // message received indicating that another player has acted
   socket.on('change', function (data) {
     if (data.turn < $scope.meta.turn) return update();
-    if (data.turn == $scope.meta.turn) {
+    if (data.turn == $scope.meta.turn && data.turn > 1) {
       if ($scope.meta.currentPlayer == $scope.meta.you) {
         ding.play();
       }
