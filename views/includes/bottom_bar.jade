@@ -29,7 +29,7 @@
     src= 
       '/images/cards/deck.png'
     ng-click=
-      'yourTurn() ? deckClicked(you(), game, meta) : null'
+      'yourTurn() ? deckClicked(you(), game, meta) : triggerReconnect()'
   )
   .pool
     button.pool-counter(

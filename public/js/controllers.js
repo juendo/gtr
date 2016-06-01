@@ -81,6 +81,11 @@ app.controller('gtrController', function($scope, socket, actions) {
     update();
   }
 
+  $scope.triggerReconnect = function() {
+    console.log('triggered reconnect');
+    socket.emit('reconnection', $scope.meta.room);
+  };
+
   $scope.$on('draggable:start', function (data) {
     isDragging=true;
   });
