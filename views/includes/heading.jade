@@ -4,8 +4,12 @@
     style='width:{{100/game.players.length}}%;'
   )
     .player-name
+        span(style='color:#F7B628')
+            | {{ $index == meta.leader ? 'L ' : '' }}
+        span(style='color:#AAA')
+            | {{ $index == meta.leader ? '| ' : '' }}
         span(style='color:#FFF')
-            | {{ ($index == meta.leader ? '(L) ' : '') + player.name.toUpperCase() }} 
+            | {{ player.name.toUpperCase() }} 
         span(style='color:#AAA')
             | | 
         span(style='color:#FFF')

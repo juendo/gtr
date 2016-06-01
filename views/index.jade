@@ -8,12 +8,12 @@ html
     .container(
       ng-if='!meta.started'
     )
-      include ./includes/create_game.jade
-      include ./includes/setup_game.jade
+      include ./includes/create.jade
+      include ./includes/setup.jade
 
     #fixed-container(
       ng-if='meta.started',
     )
-      include ./includes/players_header.jade
-      include ./includes/player_box.jade
-      include ./includes/bottom_bar.jade
+      include ./includes/heading.jade
+      include ./includes/player.jade
+      include ./includes/bottom.jade

@@ -1,0 +1,5 @@
+button.skip(
+  ng-if='yourTurn() && canSkipCurrentAction(you(), game)',
+  ng-click='yourTurn() ? skipAction(you(), game, meta) : null'
+)
+  | {{ you().actions[0] && you().actions[0].kind == 'Rome Demands' ? "GLORY TO ROME" : "SKIP ACTION" }}

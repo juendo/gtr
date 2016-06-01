@@ -1,0 +1,5 @@
+.player-clientele
+  .client(
+    ng-repeat='x in getArray(clienteleLimit(player)) track by $index',
+    style='background-color:#{{ player.clientele[$index] ? actionColors[player.clientele[$index]] : "333" }};'
+  )

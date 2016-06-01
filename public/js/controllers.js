@@ -18,6 +18,18 @@ app.controller('gtrController', function($scope, socket, actions) {
     $scope.meta.leader = data.leader;
     $scope.meta.currentPlayer = data.currentPlayer;
     $scope.meta.finished = data.finished;
+
+    // play sound effects
+    if ($scope.meta.currentPlayer == $scope.meta.you) {
+      ding.play();
+    }
+    var shouldPlayNo = false;
+    $scope.game.players.forEach(function(player) {
+      if (player.glory1 || player.glory2) {
+        shouldPlayNo = true;
+      }
+    });
+    if (shouldPlayNo) no.play();
   });
 
   // when the game is first created
@@ -110,22 +122,6 @@ app.controller('gtrController', function($scope, socket, actions) {
   // indicate to other players that there has been a change in game state
   update = function() {
 
-
-
-
-
-
-    /////////////////////////////////////////////////////////////////////////
-    // have update take input parameters, not just send the scope
-    // then send a callback to the server only to update the scope state
-    // once the server has received the game state
-    // in between it should be pending, and not allow input.
-    /////////////////////////////////////////////////////////////////////////
-
-
-
-
-
     // reset all glory to rome animation statuses
     $scope.game.players.forEach(function(player) {
       if (!$scope.meta.glory || player != $scope.meta.glory) {
@@ -159,6 +155,9 @@ app.controller('gtrController', function($scope, socket, actions) {
 
   // SCOPE VARIABLES ------------------------------------------------------------------------------------
   isDragging = false;
+
+  var ding = new Audio('/audio/bell.m4a');
+  var no = new Audio('/audio/no.wav');
 
   // the game state
   $scope.game = {players:[{name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}],pool:{'yellow':0,'green':0,'red':0,'grey':0,'purple':0,'blue':0,'black':6},deck:[],sites:{'yellow':6,'green':6,'red':6,'grey':6,'purple':6,'blue':6}};
@@ -269,9 +268,27 @@ app.controller('gtrController', function($scope, socket, actions) {
     if (actions.checkIfGameOver(game, meta)) update();
   }
 
+  $scope.drawOne = function(player, game, meta) {
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && 
+          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
+      acted = actions.drawOne(player, game, meta);
+    }
+
+    if (acted) useAction(player, game, meta);
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
   $scope.skipAction = function(player, game, meta) {
     if (player.actions[0].kind == 'Rome Demands') {
       meta.glory = player;
+    } else if (player.actions[0].kind == 'Craftsman') {
+      // deselect all cards in players hand following a craftsman for fountain
+      player.hand.forEach(function(card) {
+        card.selected = false;
+      }, this);
     }
     useAction(player, game, meta);
   }
@@ -459,30 +476,34 @@ app.controller('gtrController', function($scope, socket, actions) {
   $scope.relevantAction = function(building, action) {
     switch (building) {
       case 'Archway':
+      return action.kind == 'Architect';
       case 'Stairway':
-      return action == 'Architect';
+      return action.kind == 'Architect' && !action.usedStairway;
       case 'Aqueduct':
+      return action.kind == 'Patron' && !action.takenFromHand;
       case 'Bar':
+      return action.kind == 'Patron' && !action.takenFromDeck;
       case 'Bath':
-      return action == 'Patron';
+      return action.kind == 'Patron';
       case 'Dock':
-      return action == 'Laborer';
+      return action.kind == 'Laborer' && !action.takenFromHand;
       case 'Fountain':
-      return action == 'Craftsman';
+      return action.kind == 'Craftsman';
       case 'Atrium':
+      return action.kind == 'Merchant' && !action.takenFromDeck;
       case 'Basilica':
-      return action == 'Merchant';
+      return action.kind == 'Merchant' && !action.takenFromHand;
       case 'Bridge':
       case 'Colosseum':
-      return action == 'Legionary';
+      return action.kind == 'Legionary';
       case 'Wall':
       case 'Palisade':
-      return action == 'Rome Demands';
+      return action.kind == 'Rome Demands';
       case 'Palace':
-      return action == 'Think' || action == 'Follow';
+      return action.kind == 'Think' || action.kind == 'Follow';
       case 'Latrine':
       case 'Vomitorium':
-      return action == 'Lead' || action == 'Think' || action == 'Follow';
+      return action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow';
       default:
       return false;
     }

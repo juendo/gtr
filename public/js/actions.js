@@ -619,6 +619,14 @@ app.factory('actions', function ($rootScope) {
       return true;
     },
 
+    drawOne: function(player, game, meta) {
+      checkLatrine(player, game.pool);
+      
+      player.hand.push(game.deck.pop());
+      if (game.deck.length < 1) { meta.finished = true };
+      return true;
+    },
+
     takeJack: function(player, game) {
       if (game.pool.black > 0) {
         checkLatrine(player, game.pool);

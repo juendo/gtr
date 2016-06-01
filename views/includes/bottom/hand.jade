@@ -1,0 +1,13 @@
+#hand(
+  ng-hover-hand=''
+)
+  img.hand(
+    ng-hover-card
+    ng-drag='true', 
+    ng-drag-data='{index: $index, card: c}', 
+    ng-click='yourTurn() ? handClicked(you(), game, meta, {index: $index, card: c}) : null', 
+    ng-repeat='c in you().hand track by $index', 
+    style='left: {{ $index * spacing }}px;bottom:{{ 4 + (c.selected ? 4 : 0) }}%;{{ isDragging ? "height:92%;" : ""}}',
+    src='images/cards/{{ c.name }}.png', 
+    alt='{{ c.name }}'
+  )

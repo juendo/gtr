@@ -1,0 +1,6 @@
+img.deck(
+  src='/images/cards/Jack.png'
+  ng-click='yourTurn() ? jackClicked(you(), game, meta) : null',
+)
+.jack-counter
+  | {{ game.pool.black }}

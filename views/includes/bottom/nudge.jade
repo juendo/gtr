@@ -1,0 +1,5 @@
+button.skip(
+  ng-if='(!yourTurn()) || meta.finished',
+  ng-click='(!yourTurn() || meta.finished) ? triggerReconnect() : null'
+)
+  | NUDGE

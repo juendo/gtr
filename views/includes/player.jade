@@ -1,0 +1,11 @@
+.player-box(
+  ng-repeat='player in game.players', 
+  style='z-index:{{player == you() ? 0 : -1}};background-color: #{{ player == game.players[meta.currentPlayer] ? "CCC" : "333" }};width:{{100/game.players.length}}%;'
+)
+  include ./player/gtr.jade
+  include ./player/clientele.jade
+  include ./player/pending.jade
+  include ./player/building.jade
+  include ./player/stairway.jade
+  include ./player/score.jade
+  include ./player/stockpile.jade

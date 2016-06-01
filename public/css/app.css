@@ -109,10 +109,10 @@ img.hand {
 }
 .score-box {
     width: 95%;
-    height: 95%;
+    height: 100%;
     float: right;
     position: absolute;
-    top: 5%;
+    top: 0%;
     margin-left: 5%;
     color: white;
     text-align: center;
@@ -121,8 +121,12 @@ img.hand {
 .score {
     position: absolute;
     width: 100%;
+    height: 95%;
     text-align: center;
     font-size: 50px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
 }
 .player-clientele, .player-clientele-shadow {
     height: 100%;
@@ -147,7 +151,6 @@ img.hand {
     border-color: black;
 }
 .player-building-area {
-    width: 23.75%;
     height: auto;
     display: inline-block;
     padding: 1%;
@@ -314,4 +317,34 @@ img.hand.front {
     -webkit-transform: scale(3,3); /* Safari */
     transform: scale(3,3);
     opacity: 0;
+}
+.jack-counter {
+    position: absolute;
+    padding: 4px;
+    right: 0%;
+    color: white;
+    background-color: black;
+    text-align: center;
+}
+.deck-counter {
+    position: absolute;
+    padding: 4px;
+    right: 10%;
+    color: white;
+    background-color: black;
+    text-align: center;
+}
+.draw-one {
+    position: absolute;
+    left: 80%;
+    bottom: 8px;
+    border-radius: 12%;
+    outline: none;
+    border: none;
+    background-color: white;
+    color: black;
+    opacity: 0.5;
+}
+.draw-one:hover {
+    opacity: 1;
 }

@@ -1,0 +1,9 @@
+.pool
+  button.pool-counter(
+    ng-drag='game.pool[color] > 0 && yourTurn() && hasArchway(you())',
+    ng-drag-data='{color:color}',
+    ng-repeat='color in poolColors',
+    ng-click='yourTurn() ? poolClicked(you(), color, game, meta) : null',
+    style='{{game.sites[color] == 0 ? ("border-style:solid;border-width:4px;border-color:#" + colors[color] + ";") : ""}}background-color:#{{ colors[color] }};color: white;background:repeating-linear-gradient(45deg,#{{colors[color]}},#{{colors[color]}} {{game.sites[color] > 0 ? "7" : "0"}}px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "000"}} {{game.sites[color] > 0 ? "7" : "0"}}px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "000"}} 14px)'
+  )
+    | {{ game.pool[color] > 0 ? game.pool[color] : "" }}
