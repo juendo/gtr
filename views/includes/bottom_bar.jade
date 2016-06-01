@@ -29,7 +29,7 @@
     src= 
       '/images/cards/deck.png'
     ng-click=
-      'yourTurn() ? deckClicked(you(), game, meta) : triggerReconnect()'
+      'yourTurn() ? deckClicked(you(), game, meta) : null'
   )
   .pool
     button.pool-counter(
@@ -52,3 +52,10 @@
       'yourTurn() ? skipAction(you(), game, meta) : null'
   )
     | {{ you().actions[0] && you().actions[0].kind == 'Rome Demands' ? "GLORY TO ROME" : "SKIP ACTION"}}
+  button.skip(
+    ng-if=
+      '!yourTurn()',
+    ng-click=
+      '!yourTurn() ? triggerReconnect() : null'
+  )
+    | NUDGE
