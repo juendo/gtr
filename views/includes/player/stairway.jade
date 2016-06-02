@@ -7,5 +7,6 @@
     src='images/cards/{{ building }}.png',
     alt='{{ building }}',
     ng-click='(building == "Vomitorium" && yourTurn()) ? vomitorium(you(), game.pool) : null',
-    style='opacity:0.5;border-style:solid;border-color:#{{player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000"}};border-width:{{ $parent.$parent.$index == meta.currentPlayer && hasAbilityToUse(building.name, player) && player.actions[0] && relevantAction(building, player.actions[0]) ? "5" : "0" }}px;'
-  )
+    ng-style='{ "border-color" : "#" + player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000" }',
+    ng-class='{ "is-relevant" : $parent.$parent.$index == meta.currentPlayer && hasAbilityToUse(building, player) && player.actions[0] && relevantAction(building, player.actions[0]) }'
+)

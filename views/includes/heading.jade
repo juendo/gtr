@@ -18,7 +18,7 @@
         span(style='color:#AAA')
             | {{ player.hand.length }} CARDS
     .player-action-container
-        .player-action(style='color:#{{(player.actions[0] != undefined && actionColors[player.actions[0].kind] == "FFF") ? "000" : "FFF"}};background-color:#{{player.actions[0] != undefined ? actionColors[player.actions[0].kind] : "000"}}')
+        .player-action(style='color:#{{(player.actions[0] != undefined && actionColors[player.actions[0].kind] == "FFF") ? "000" : "FFF"}};background-color:#{{player.actions[0] != undefined ? actionColors[player.actions[0].kind] : "222"}}')
             | {{ player.actions[0].description }}
     .player-vault
         span(style='color:#FFF')

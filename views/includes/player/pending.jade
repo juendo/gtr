@@ -1,9 +1,7 @@
-.pending(
-  style='/*background-color: #{{ player == game.players[meta.currentPlayer] ? "DDD" : "444" }}*/'
-)
+.pending
   .pending-center
     .pending-card(
       ng-repeat='card in player.pending track by $index',
       ng-click='yourTurn() && $parent.$index == meta.you ? pendingClicked(you(), {index: $index, card: card}, game, meta) : null',
-      style='background-color:#{{ colors[card.color] }}'
+      ng-style='{ "background-color" : "#" + colors[card.color] }'
     )

@@ -662,9 +662,9 @@ app.controller('gtrController', function($scope, socket, actions) {
       'Statue' : 'FFF'
     }
   $scope.actionBorderColors = 
-    { 'Lead' : '000',
-      'Follow' : '000',
-      'Jack' : '000',
+    { 'Lead' : '222',
+      'Follow' : '222',
+      'Jack' : '222',
       'Craftsman' : '2CA73D',
       'Laborer' : 'F7B628',
       'Architect' : '9B9D88',
@@ -672,8 +672,8 @@ app.controller('gtrController', function($scope, socket, actions) {
       'Patron' : '8E2170',
       'Merchant' : '02AEDE',
       'Rome Demands' : '000',
-      'Think' : '000',
-      'Prison' : '000'
+      'Think' : '222',
+      'Prison' : '222'
     }
   $scope.materials = 
     { 'yellow' : 'rubble',

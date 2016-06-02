@@ -1,7 +1,7 @@
 .player-building-area(
   ng-if='!meta.finished',
   ng-repeat='building in player.buildings track by $index',
-  style='width: {{ game.players.length == 2 && player.buildings.length + player.publicBuildings.length > 8 ? "15.8333" : "23.75" }}%;'
+  ng-class='{ "sixth-width" : game.players.length == 2 && player.buildings.length + player.publicBuildings.length > 8 }'
 )
   img.building(
     ng-drop='true', 
@@ -9,16 +9,17 @@
     src='images/cards/{{ building.name }}.png',
     alt='{{ building.name }}',
     ng-click='(building.name == "Vomitorium" && yourTurn() && $parent.$parent.$index == meta.you) ? vomitorium(you(), game.pool) : ($parent.$parent.$index != meta.you && yourTurn() ? prison(you(), building, player, $index, game, meta) : null)',
-    style='border-style:solid;border-color:#{{player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000"}};border-width:{{ $parent.$parent.$index == meta.currentPlayer && hasAbilityToUse(building.name, player) && player.actions[0] && relevantAction(building.name, player.actions[0]) ? "5" : "0" }}px;'
+    ng-style='{ "border-color" : "#" + (player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000") }',
+    ng-class='{ "is-relevant" : $parent.$parent.$index == meta.currentPlayer && hasAbilityToUse(building.name, player) && player.actions[0] && relevantAction(building.name, player.actions[0]) }'
   )
   .materials-holder(
-    style='background:repeating-linear-gradient(-45deg,#FFF,#FFF 7px,#{{colors[building.siteColor]}} 7px,#{{colors[building.siteColor]}} 14px);',
+    ng-style='{ "background" : "repeating-linear-gradient(-45deg, #FFF, #FFF 7px, #" + colors[building.siteColor] + " 7px, #" + colors[building.siteColor] + " 14px)" }',
     ng-if='!building.done'
   )
     .materials(
-      style='width:{{ 17 * colorValues[building.siteColor] }}%;'
+      ng-style='{ "width" : 17 * colorValues[building.siteColor] + "%" }'
     )
       .material(
         ng-repeat='material in building.materials track by $index',
-        style='width: {{ 100 / colorValues[building.siteColor] }}%;background-color:#{{ colors[material] }};'
+        ng-style='{ "width" : 100 / colorValues[building.siteColor] + "%", "background-color" : "#" + colors[material] }'
       )

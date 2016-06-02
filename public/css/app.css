@@ -16,7 +16,7 @@ body {
     user-select: none;
     cursor: default;
 }
-.deck, .hand {
+.deck, .jack, .hand {
     cursor: pointer;
 }
 .access-code {
@@ -28,6 +28,7 @@ body {
     text-align:center;
     cursor: text;
 }
+
 img.hand {
     height: 92%;
     border-radius: 5%;
@@ -39,19 +40,30 @@ img.hand {
     height: 100%;
     position: fixed;
     margin: 0px;
+    min-width: 1000px;
+    min-height: 700px;
 }
 .player-box {
     height: 68%;
     float: left;
     position: relative;
-
+    z-index: -1;
+    background-color: #333;
+    transition: background-color linear 0.2s;
+}
+.player-box.is-you {
+    z-index: 0;
+}
+.player-box.is-current {
+    background-color: #CCC;
+    transition: background-color linear 0.2s;
 }
 .player-title {
     width: 100%;
     height: 7%;
     position: relative;
 
-    background-color: black;
+    background-color: #222;
     text-align: center;
     /*box-shadow: 2px 0px 5px #AAA;*/
     color: white;
@@ -74,7 +86,7 @@ img.hand {
 }
 .player-influence {
     float: left;
-    color: black;
+    color: #222;
     background-color: white;
     border-radius: 5px;
 }
@@ -133,7 +145,7 @@ img.hand {
     width: 5%;
 
     position: relative;
-    background-color: black;
+    background-color: #222;
     float: left;
 }
 .player-clientele-shadow {
@@ -148,19 +160,28 @@ img.hand {
     border: 4px;
     border-radius: 32%;
     border-style: solid;
-    border-color: black;
+    border-color: #222;
 }
 .player-building-area {
     height: auto;
     display: inline-block;
     padding: 1%;
+    width: 23.75%;
+}
+.player-building-area.sixth-width {
+    width: 15.8333%;
 }
 .building {
     width: 100%;
     height: 100%;
     border-radius: 5%;
-    /*box-shadow: 0px 0px 5px #AAA;*/
-
+    border-style:solid;
+    border-width: 0px;
+    transition: border-width linear 0.2s;
+}
+.building.is-relevant {
+    border-width: 5px;
+    transition: border-width linear 0.2s;
 }
 .materials-holder {
     width:90%;
@@ -184,6 +205,12 @@ img.hand {
     height:5%;
     position:absolute;
     text-align: center;
+    background-color: #444;
+    transition: background-color linear 0.2s;
+}
+.stockpile.is-current {
+    background-color: #DDD;
+    transition: background-color linear 0.2s;
 }
 .vault {
     bottom: 0px;
@@ -191,6 +218,12 @@ img.hand {
     height:5.263%;
     position:absolute;
     text-align: center;
+    background-color: #444;
+    transition: background-color linear 0.2s;
+}
+.vault.is-current {
+    background-color: #DDD;
+    transition: background-color linear 0.2s;
 }
 .pending {
     background-color: none; 
@@ -234,56 +267,111 @@ img.hand {
     width: 100%;
     height: 25%;
     /*background-color: #eedfe5;*/
-    background-color: black;
+    background-color: #222;
     clear: both;
     /*box-shadow:2px 0px 5px #AAA;
 */    position: relative;
 }
 .hand {
     position:absolute; 
-    bottom:0; 
+    bottom:0;
 }
 .pool {
-    float:right;height:100%;width:10%;
+    float: right;
+    height: 100%;
+    width: 10%;
     border: 4px;
-    border-color: black;
+    border-color: #222;
     border-style: solid;
+    position: absolute;
+    right: 20%;
 }
 .pool-counter {
     width: 50%;
     height: 33.333%;
     float: left;
     text-align: center;
-    font-size: 30px;
+    font-size: 175%;
     border: 4px;
-    border-color: black;
+    border-color: #222;
     border-radius: 20%;
     border-style: solid;
 }
 .pool-counter:focus {
     outline:0;
 }
+.pool-counter:hover {
+    border-width: 6px;
+}
 img.hand.front {
     z-index: 1;
 }
-.deck {
-    /*border-radius: 5%;*/
-    width: 10%;
+.jack, .deck {
+    position: absolute;
     overflow: hidden;
-    float:right;height:100%;background-color: none;
 }
-.skip {
+.jack {
+    bottom: 4%;
+    height: 92%;
+    left: 90.5%;
+    border-width: 0px;
+    border-radius: 8%;
+    width: 9%;
+    -webkit-filter: invert(13.5%);
+}
+.deck {
+    height: 92%;
+    bottom: 4%;
+    top: 4%;
+    left: 80.5%;
+    width: 9%;
+    border-width: 0px;
+    border-radius: 8%;
+    -webkit-filter: invert(13.5%);
+}
+.deck:hover, .jack:hover {
+    -webkit-filter: invert(0%);
+}
+.hand.dragging, .stockpile-material.dragging {
+    transition: none;
+}
+.hand {
+    transition: all linear 0.06s;
+}
+/*
+.deck {
+    border-radius: 11%;
+    border-style: solid;
     width: 10%;
+    border-color: #222;
+    border-width: 8px;
+    overflow: hidden;
+    float: right;
     height: 100%;
+    /* position: absolute; */
+    /* margin-bottom: 4%; */
+    /* margin-top: 4%; 
+    background-color: none;
+}
+*/
+.skip {
+    width: 9%;
+    height: 92%;
+    bottom: 4%;
     background-color: #222;
     color: white;
     outline: none;
-    border: 8px;
-    border-style: solid;
-    border-color: black;
-    border-radius: 20%;
-    float: right;
-    font-size: 20px;
+    border: none;
+    /* border-style: solid; */
+    border-color: #222;
+    border-radius: 8%;
+    /* float: right; */
+    font-size: 18px;
+    right: 30.5%;
+    position: absolute;
+}
+.skip:hover {
+    background-color: black;
 }
 #hand {
     float:left;
@@ -312,7 +400,7 @@ img.hand.front {
     opacity: 1;
 }
 .glory-text.gtr-hide {
-    color: black;
+    color: #222;
     transition: all linear 1s;
     -ms-transform: scale(3,3); /* IE 9 */
     -webkit-transform: scale(3,3); /* Safari */
@@ -321,29 +409,37 @@ img.hand.front {
 }
 .jack-counter {
     position: absolute;
-    padding: 4px;
+    padding: 12px;
     right: 0%;
-    color: white;
-    background-color: black;
+    width: 5%;
     text-align: center;
+    color: white;
+    background-color: transparent;
+    /* display: none; */
+    text-align: right;
 }
 .deck-counter {
     position: absolute;
-    padding: 4px;
-    right: 10%;
-    color: white;
-    background-color: black;
+    /* padding: 8px; */
+    padding: 12px;
     text-align: center;
+    right: 10%;
+    width: 5%;
+    color: white;
+    background-color: transparent;
+    text-align: right;
 }
 .draw-one {
     position: absolute;
-    left: 80%;
-    bottom: 8px;
-    border-radius: 12%;
+    left: 82.5%;
+    bottom: 4%;
+    border-radius: 10%;
     outline: none;
+    width: 5%;
+    font-size: 12px;
     border: none;
     background-color: white;
-    color: black;
+    color: #222;
     opacity: 0.5;
 }
 .draw-one:hover {

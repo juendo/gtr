@@ -1,5 +1,5 @@
 .stockpile(
-  style='background-color: #{{ player == game.players[meta.currentPlayer] ? "DDD" : "444" }}'
+  ng-class='{ "is-current" : player == game.players[meta.currentPlayer] }'
 )
   .stockpile-padding
   .stockpile-center
@@ -8,5 +8,5 @@
       ng-drag-data='{index: $index, material: material}', 
       ng-repeat='material in player.stockpile track by $index', 
       ng-click='yourTurn() && $parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game, meta) : null', 
-      style='background-color:#{{ colors[material] }};'
+      ng-style='{ "background-color" : "#" + colors[material] }'
     )
