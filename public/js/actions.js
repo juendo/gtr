@@ -91,7 +91,7 @@ app.factory('actions', function ($rootScope) {
     }
   };
 
-  var canAddToStructure = function(structure, player, color, game) {
+  var canAddToStructure = function(structure, player, color, game, action) {
 
     var stairway = hasAbilityToUse('Stairway', player);
 
@@ -102,7 +102,8 @@ app.factory('actions', function ($rootScope) {
         belongsToPlayer = true;
       }
     });
-    if (!belongsToPlayer && (!stairway || !structure.done)) return false;
+    if (!belongsToPlayer && (!stairway || !structure.done || (action && action.usedStairway))) return false;
+    if (belongsToPlayer && (action && action.usedRegularArchitect)) return false;
 
     var scriptorium = hasAbilityToUse('Scriptorium', player);
     var road = hasAbilityToUse('Road', player);
@@ -134,10 +135,19 @@ app.factory('actions', function ($rootScope) {
           p.publicBuildings = [structure.name];
         }
       });
-      
-      return !!canAdd && !alreadyPublic;
+
+      var ok = !!canAdd && !alreadyPublic;
+      if (ok) {
+        action.usedStairway = true;
+      }
+      return ok;
     } else {
-      return canAdd && !structure.done;
+
+      var ok = !!canAdd && !structure.done;
+      if (ok) {
+        action.usedRegularArchitect = true;
+      }
+      return ok;
     }
   };
 
@@ -348,8 +358,8 @@ app.factory('actions', function ($rootScope) {
       return validSelection(player, selectedCards, color);
     },
 
-    canAddToStructure: function(structure, player, color, game) {
-      return canAddToStructure(structure, player, color, game);
+    canAddToStructure: function(structure, player, color, game, action) {
+      return canAddToStructure(structure, player, color, game, action);
     },
 
     checkIfComplete: function(structure, player, meta, actionType) {
@@ -546,6 +556,12 @@ app.factory('actions', function ($rootScope) {
           6 - game.sites[data.color] < game.players.length
       || (game.sites[data.color] > 0 && ((player.actions[1] && player.actions[1].kind == action.kind) || tower))) 
       {
+        if (
+            action
+        &&  action.usedRegularArchitect)
+        {
+          return false;
+        }
 
         if (
             action
@@ -566,6 +582,8 @@ app.factory('actions', function ($rootScope) {
         data.card.selected = false;
 
         addThinkIfPlayerHasAcademy(player, action);
+
+        action.usedRegularArchitect = true;
 
         // if using an in town site
         if (
@@ -589,15 +607,6 @@ app.factory('actions', function ($rootScope) {
 
         if (allSitesUsed(game.sites, game.players.length)) {
           meta.finished = true;
-        }
-
-        if (
-            action.kind == 'Architect' 
-        &&  hasAbilityToUse('Stairway', player))
-        {
-          var used = !!action.usedStairway;
-          action.usedStairway = true;
-          return used;
         }
 
         return true;
@@ -726,7 +735,7 @@ app.factory('actions', function ($rootScope) {
     },
 
     fillStructureFromHand: function(structure, player, data, meta, game, action) {
-      if (canAddToStructure(structure, player, data.card.color, game)) {
+      if (canAddToStructure(structure, player, data.card.color, game, action)) {
 
         if (
             action
@@ -750,21 +759,15 @@ app.factory('actions', function ($rootScope) {
     },
 
     fillStructureFromStockpile: function(structure, player, data, meta, game, action) {
-      if (canAddToStructure(structure, player, data.material, game)) {
+      if (canAddToStructure(structure, player, data.material, game, action)) {
         structure.materials.push(data.material);
         player.stockpile.splice(data.index, 1);
 
         checkIfComplete(structure, player, meta, 'Architect');
 
-        if (
-            action.kind == 'Architect' 
-        &&  hasAbilityToUse('Stairway', player))
-        {
-          var used = !!action.usedStairway;
-          action.usedStairway = true;
-          return used;
-        }
-
+        if (hasAbilityToUse('Stairway', player)) {
+          return !!action.usedRegularArchitect && !!action.usedStairway;
+        } 
         return true;
       } else {
         return false;
@@ -772,20 +775,15 @@ app.factory('actions', function ($rootScope) {
     },
 
     fillStructureFromPool: function(structure, player, color, meta, game, action) {
-      if (canAddToStructure(structure, player, color, game)) {
+      if (canAddToStructure(structure, player, color, game, action)) {
         structure.materials.push(color);
         game.pool[color]--;
 
         checkIfComplete(structure, player, meta, 'Architect');
 
-        if (
-            action.kind == 'Architect' 
-        &&  hasAbilityToUse('Stairway', player))
-        {
-          var used = !!action.usedStairway;
-          action.usedStairway = true;
-          return used;
-        }
+        if (hasAbilityToUse('Stairway', player)) {
+          return !!action.usedRegularArchitect && !!action.usedStairway;
+        } 
 
         return true;
       } else {

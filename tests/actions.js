@@ -210,7 +210,7 @@ describe('gtr', function () {
         var scriptorium = {name: 'Scriptorium', color: 'blue', done: true, materials: [], selected: false, copy:1, siteColor: 'blue'};
         player.buildings.push(garden);
         player.buildings.push(scriptorium);
-        expect(canAddToStructure(garden, player, 'purple')).toBe(true);
+        expect(canAddToStructure(garden, player, 'purple', {}, {})).toBe(true);
       });
       it('building with marble as most recent thing added is finished with scriptorium', function() {
         var garden = {name: 'Garden', color: 'blue', done: false, materials: ['purple'], selected: false, copy:1, siteColor: 'blue'};
@@ -225,8 +225,8 @@ describe('gtr', function () {
         player.buildings.push(road);
         var garden = {name: 'Garden', color: 'blue', done: false, materials: ['purple'], selected: false, copy:1, siteColor: 'blue'};
         player.buildings.push(garden);
-        expect(canAddToStructure(garden, player, 'green')).toBe(true);
-        expect(canAddToStructure(garden, player, 'red')).toBe(true);
+        expect(canAddToStructure(garden, player, 'green', {}, {})).toBe(true);
+        expect(canAddToStructure(garden, player, 'red', {}, {})).toBe(true);
       });
       it('should finish villa in one architect but not in craftsman', function() {
         var villa = {name: 'Villa', color: 'blue', done: false, materials: ['blue'], selected: false, copy:1, siteColor: 'blue'};
@@ -348,7 +348,7 @@ describe('gtr', function () {
         var shrine = {name: 'Shrine', color: 'red', done: false, materials: ['red'], selected: false, copy:2, siteColor: 'red'};
         player.buildings.push(shrine);
         var data = {index: 0, card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'}};
-        fillStructureFromHand(shrine, player, data, {});
+        fillStructureFromHand(shrine, player, data, {}, {}, {}, {});
         expect(player.actions[player.actions.length - 1].kind).toBe('Think');
       });
       it('shouldnt add think to end of a players actions if they have an academy when they fill a structure from hand and already have used a craftsman', function() {
@@ -356,17 +356,17 @@ describe('gtr', function () {
         var shrine = {name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:2, siteColor: 'red'};
         player.buildings.push(shrine);
         var data = {index: 0, card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'}};
-        fillStructureFromHand(shrine, player, data, {});
+        fillStructureFromHand(shrine, player, data, {}, {}, {}, {});
         var actionsCount = player.actions.length;
         data = {index: 0, card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:2, siteColor: 'red'}};
-        fillStructureFromHand(shrine, player, data, {});
+        fillStructureFromHand(shrine, player, data, {}, {}, {}, {});
         expect(player.actions.length).toBe(actionsCount);
       });
       it('should add think to end of a players actions if they have just completed an academy with a craftsman', function() {
         var unfinishedAcademy = {name: 'Academy', color: 'red', done: false, materials: ['red'], selected: false, copy:1, siteColor: 'red'};
         player.buildings.push(unfinishedAcademy);
         var data = {index: 0, card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'}};
-        fillStructureFromHand(unfinishedAcademy, player, data, {});
+        fillStructureFromHand(unfinishedAcademy, player, data, {}, {}, {}, {});
         expect(player.actions[player.actions.length - 1].kind).toBe('Think');
       });
     });
@@ -769,52 +769,68 @@ describe('gtr', function () {
         fillStructureFromStockpile = actions.fillStructureFromStockpile;
       });
       it('shouldnt let you add to opponents finished structure thats not yours without a stairway', function() {
-        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(false);
+        expect(canAddToStructure(latrine, player, 'yellow', game, {})).toBe(false);
       });
       it('shouldnt let you add to opponents unfinished structure with stairway', function() {
         player.buildings.push(stairway);
         latrine.done = false;
-        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(false);
+        expect(canAddToStructure(latrine, player, 'yellow', game, {})).toBe(false);
       });
       it('should let you add to opponents finished structure with a stairway', function() {
         player.buildings.push(stairway);
-        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(true);
-        expect(canAddToStructure(palace, player, 'purple', game)).toBe(true);
-        expect(canAddToStructure(palace, player, 'purple', game)).toBe(false);
+        expect(canAddToStructure(latrine, player, 'yellow', game, {})).toBe(true);
+        expect(canAddToStructure(palace, player, 'purple', game, {})).toBe(true);
+        expect(canAddToStructure(palace, player, 'purple', game, {})).toBe(false);
       });
       it('you should have ability to use opponents structure after adding material', function() {
         expect(hasAbilityToUse('Latrine', player)).toBeFalsy();
         player.buildings.push(stairway);
-        canAddToStructure(latrine, player, 'yellow', game);
+        canAddToStructure(latrine, player, 'yellow', game, {});
         expect(hasAbilityToUse('Latrine', player)).toBeTruthy();
       });
       it('shouldnt change your influence after giving you ability to use opponents structure', function() {
         player.buildings.push(stairway);
         var before = influence(player);
-        canAddToStructure(latrine, player, 'yellow', game);
+        canAddToStructure(latrine, player, 'yellow', game, {});
         expect(influence(player)).toBe(before);
       });
       it('shouldnt be possible to add to opponents blank building', function() {
         player.buildings.push(stairway);
         latrine.color = 'blank';
         latrine.siteColor = 'blank';
-        expect(canAddToStructure(latrine, player, 'yellow', game)).toBe(false);
+        expect(canAddToStructure(latrine, player, 'yellow', game, {})).toBe(false);
       });
       it('should set add structure name to games public buildings', function() {
         player.buildings.push(stairway);
-        canAddToStructure(latrine, player, 'yellow', game);
+        canAddToStructure(latrine, player, 'yellow', game, {});
         expect(player.publicBuildings).toBeDefined();
       });
       it('should be in addition', function() {
         player.buildings.push(stairway);
+        var unfinishedPalace = {name: 'Palace', color: 'purple', done: true, materials: [], selected: false, copy:3, siteColor: 'purple'};
         player.buildings.push(palace);
         player.stockpile.push('purple');
         player.stockpile.push('purple');
-        var unfinishedPalace = palace;
         unfinishedPalace.done = false;
         var action = {kind:'Architect'};
+        // filling their own finished palace does nothing
         expect(fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
-        expect(fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(true);
+        expect(action.usedRegularArchitect).toBeFalsy();
+        expect(action.usedStairway).toBeFalsy();
+        // filling another players unfinished palace does nothing
+        expect(fillStructureFromStockpile(unfinishedPalace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
+        expect(action.usedRegularArchitect).toBeFalsy();
+        expect(action.usedStairway).toBeFalsy();
+        // filling their own unfinished palace does something
+        palace.done = false;
+        expect(fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
+        expect(action.usedRegularArchitect).toBe(true);
+        expect(action.usedStairway).toBeFalsy();
+        // filling opponents finished structure does something
+        unfinishedPalace.done = true;
+        expect(fillStructureFromStockpile(unfinishedPalace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(true);
+        expect(action.usedRegularArchitect).toBe(true);
+        expect(action.usedStairway).toBe(true);
       });
     });
     describe('scoring', function() {
