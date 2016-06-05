@@ -1,7 +1,7 @@
 .player-building-area(
   ng-if='!!player.publicBuildings && !meta.finished && !hasAbilityToUseWithoutPublicBuildings(building, player)',
   ng-repeat='building in player.publicBuildings track by $index',
-  style='width: {{ (game.players.length == 2 && player.buildings.length + player.publicBuildings.length > 8) ? "15.8333" : "23.75" }}%;'
+  ng-class='{ "sixth-width" : game.players.length == 2 && player.buildings.length + player.publicBuildings.length > 8 }'
 )
   img.building(
     src='images/cards/{{ building }}.png',
