@@ -8,7 +8,17 @@
   )
     .stockpile-padding
     .stockpile-center
+      .stockpile-spacing.end(
+        ng-if='player.vault.length > 0',
+        ng-style='{ "width" : 16.666667 / (player.vault.length * 2) + "%" }'
+      )
       .stockpile-material(
-        ng-repeat='material in player.vault track by $index', 
-        ng-style='{ "background-color" : "#" + colors[material] }'
+        ng-if='player.vault.length > 0',
+        ng-repeat-start='material in player.vault track by $index',
+        ng-style='{ "background-color" : "#" + colors[material], "width" : 83.333333 / player.vault.length + "%" }'
+      )
+      .stockpile-spacing.end(
+        ng-repeat-end='',
+        ng-class='{ "end" : $index == player.vault.length - 1 }',
+        ng-style='{ "width" : 16.666667 / (player.vault.length * ($index == player.vault.length - 1 ? 2 : 1)) + "%" }'
       )

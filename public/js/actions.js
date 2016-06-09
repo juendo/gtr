@@ -689,7 +689,7 @@ app.factory('actions', function ($rootScope) {
         else if (
             data
         &&  data.deck
-        &&  data.deck.length > 1
+        &&  data.deck.length > 0
         && !action.takenFromDeck
         &&  bar)
         {

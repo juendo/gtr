@@ -121,7 +121,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   };
 
   $scope.$on('draggable:start', function (data) {
-    isDragging=true;
+    isDragging = true;
   });
 
   // indicate to other players that there has been a change in game state

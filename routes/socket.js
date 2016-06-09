@@ -3,6 +3,7 @@ module.exports = function (io) {
 
   var s = function(socket) {
     socket.on('update', function (data) {
+      socket.join(data.room);
       socket.broadcast.to(data.room).emit('change', data);
       if (gamesList.gamePlayers[data.room]) {
         delete gamesList.gamePlayers[data.room];

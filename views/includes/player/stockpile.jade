@@ -3,10 +3,20 @@
 )
   .stockpile-padding
   .stockpile-center
+    .stockpile-spacing.end(
+      ng-if='player.stockpile.length > 0',
+      ng-style='{ "width" : 16.666667 / (player.stockpile.length * 2) + "%" }'
+    )
     .stockpile-material(
-      ng-drag='$parent.$index == meta.you',
+      ng-if='player.stockpile.length > 0',
+      ng-repeat-start='material in player.stockpile track by $index',
+      ng-drag='$parent.$parent.$index == meta.you',
       ng-drag-data='{index: $index, material: material}', 
-      ng-repeat='material in player.stockpile track by $index', 
-      ng-click='yourTurn() && $parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game, meta) : null', 
-      ng-style='{ "background-color" : "#" + colors[material] }'
+      ng-click='yourTurn() && $parent.$parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game, meta) : null', 
+      ng-style='{ "background-color" : "#" + colors[material], "width" : 83.333333 / player.stockpile.length + "%" }'
+    )
+    .stockpile-spacing.end(
+      ng-repeat-end='',
+      ng-class='{ "end" : $index == player.stockpile.length - 1 }',
+      ng-style='{ "width" : 16.666667 / (player.stockpile.length * ($index == player.stockpile.length - 1 ? 2 : 1)) + "%" }'
     )
