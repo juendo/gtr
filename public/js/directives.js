@@ -26,7 +26,7 @@ angular.module('myApp.directives', []).
     scope: false,
     link: function(scope, elem, attrs) {
       $(elem).mousemove(function(event) {
-        if (event.pageX - elem.offset().left > scope.spacing) {
+        if (event.pageX - elem.offset().left > scope.spacing(scope.you().hand.length)) {
           elem.removeClass('front');
           elem.next().addClass('front');
         }

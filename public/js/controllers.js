@@ -6,6 +6,11 @@ socket.emit('send:message', {
 
 app.controller('gtrController', function($scope, socket, actions) {
 
+  $(window).resize(function() {
+    console.log($scope);
+    $scope.$apply();
+  });
+
   // SOCKET behaviour ------------------------------------------------------------------------------------
 
   // message received indicating that another player has acted
@@ -202,6 +207,17 @@ app.controller('gtrController', function($scope, socket, actions) {
     return $scope.game.players[$scope.meta.you];
   }
 
+  $scope.buildingWidth = function(len) {
+    var ratio = 1;
+    // the width of a player box
+    var width = 95 / ratio;
+    var height = $(window).height() * 0.68 * 0.92;
+
+    while (0.01 * (292/208) * $(window).width() * width * Math.ceil(len / ratio) / $scope.game.players.length + 10 * Math.ceil(len / ratio) > height) {
+      width = 95 / ++ratio;
+    }
+    return width;
+  }
   // USER INPUT FUNCTIONS ------------------------------------------------------------------------------------
   // in general these will check if you have a suitable action to perform, and then attempt to perform that action
   // each action return true or false depending on whether or not it worked
@@ -345,12 +361,8 @@ app.controller('gtrController', function($scope, socket, actions) {
          player.actions[0].kind != 'Architect')) {
       return;
     }
-    if (data.card) {
-      if (action.kind == 'Craftsman') {
-        acted = actions.fillStructureFromHand(structure, player, data, meta, game, action);
-      } else {
-        player.hand.push(data.card);
-      }
+    if (data.card && action.kind == 'Craftsman') {
+      acted = actions.fillStructureFromHand(structure, player, data, meta, game, action);
     } 
     else if (data.material && action.kind == 'Architect') {
       acted = actions.fillStructureFromStockpile(structure, player, data, meta, game, action);
@@ -644,7 +656,16 @@ app.controller('gtrController', function($scope, socket, actions) {
       'purple',
       'blue'
     ]
-  $scope.spacing = 20;
+  $scope.spacing = function(len) {
+    if (len <= 1) return 20;
+    else if (len == 2) {
+      return ($(window).width()*0.5-0.92*0.25*$(window).height()*208/292)/2;
+    }
+    else {
+      // if height of card plus spacings is too wide
+      return ($(window).width()*0.5-0.92*0.25*$(window).height()*208/292)/(len-1);
+    }
+  };
   $scope.actionColors = 
     { 'Lead' : 'FFF',
       'Follow' : 'FFF',

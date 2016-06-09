@@ -1,7 +1,7 @@
 .player-building-area(
   ng-if='!meta.finished',
   ng-repeat='building in player.buildings track by $index',
-  ng-class='{ "sixth-width" : game.players.length == 2 && player.buildings.length + player.publicBuildings.length > 8 }'
+  ng-style='{ "max-width" : (game.players.length == 2 ? 23.75 : 19) + "%", "width" : buildingWidth(player.buildings.length + (player.publicBuildings ? player.publicBuildings.length : 0)) + "%" }'
 )
   img.building(
     ng-drop='true', 
