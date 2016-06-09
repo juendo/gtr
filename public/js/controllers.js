@@ -7,7 +7,6 @@ socket.emit('send:message', {
 app.controller('gtrController', function($scope, socket, actions) {
 
   $(window).resize(function() {
-    console.log($scope);
     $scope.$apply();
   });
 
