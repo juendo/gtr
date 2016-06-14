@@ -15,7 +15,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // message received indicating that another player has acted
   socket.on('change', function (data) {
     if (data.turn < $scope.meta.turn) return update();
-    if (data.turn == $scope.meta.turn && data.turn > 1) {
+    if (data.turn == $scope.meta.turn && data.turn > 1 && !data.move) {
       if ($scope.meta.currentPlayer == $scope.meta.you) {
         ding.play();
       }
@@ -39,6 +39,11 @@ app.controller('gtrController', function($scope, socket, actions) {
       }
     });
     if (shouldPlayNo) no.play();
+
+    // apply move if AI opponent moved, only for the player who created the game
+    if (data.move && $scope.meta.you == 0) {
+      applyMove(data);
+    }
   });
 
   // when the game is first created
@@ -49,7 +54,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // when you are accepted into an existing game
   socket.on('accepted', function(players) {
     $scope.game.players = players.map(function(name) {
-      return {name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
+      return {name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], ai: name == 'AI'};
     });
     $scope.meta.you = players.length - 1;
     $scope.meta.created = true;
@@ -58,6 +63,10 @@ app.controller('gtrController', function($scope, socket, actions) {
   // when another player joins your game
   socket.on('joined', function(name) {
     $scope.game.players.push({name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]});
+  });
+
+  socket.on('ai joined', function(name) {
+    $scope.game.players.push({name:'AI',buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], ai: true});
   });
 
   socket.on('disconnect', function() {
@@ -112,6 +121,10 @@ app.controller('gtrController', function($scope, socket, actions) {
     update();
   }
 
+  $scope.addAI = function(meta, game) {
+    socket.emit('add ai', {room: meta.room});
+  }
+
   $scope.triggerReconnect = function() {
     console.log('triggered reconnect');
     socket.emit('reconnection', {
@@ -158,7 +171,8 @@ app.controller('gtrController', function($scope, socket, actions) {
       turn: ++$scope.meta.turn,
       currentPlayer: $scope.meta.currentPlayer,
       room: $scope.meta.room,
-      finished: $scope.meta.finished
+      finished: $scope.meta.finished,
+      ai: $scope.game.players[$scope.meta.currentPlayer].ai
     });
   }
 
@@ -598,7 +612,7 @@ app.controller('gtrController', function($scope, socket, actions) {
   // or advances to the next turn if there is none
   nextToAct = function(game, meta) {
 
-    $scope.you().hand.forEach(function(card) {
+    game.players[meta.currentPlayer].hand.forEach(function(card) {
       card.selected = false;
     }, this);
 
@@ -643,6 +657,60 @@ app.controller('gtrController', function($scope, socket, actions) {
     }, this);
 
     update();
+  }
+
+  applyMove = function(data) {
+    console.log(data);
+    var player = data.game.players[data.currentPlayer];
+    var acted = false;
+    switch (data.move.kind) {
+
+      case 'Refill':
+        acted = actions.think(player, data.game, $scope.meta);
+        break;
+
+      case 'Lead':
+        for (var i = 0; i < data.move.cards.length; i++) {
+          player.hand[i].selected = true;
+        }
+        acted = actions.lead(player, data.game, $scope.meta, {card:{name: '', color: data.move.role}}, player.actions[0]);
+        break;
+
+      case 'Patron':
+        acted = actions.patron(player, data.move.color, data.game.pool, null, player.actions[0]);
+        break;
+
+      case 'Merchant':
+        acted = actions.merchant(player, data.move.data, player.actions[0]);
+        break;
+
+      case 'Laborer':
+        acted = actions.laborer(player, data.move.color, data.game.pool, null, player.actions[0]);
+        break;
+
+      case 'Fill from Hand':
+        acted = actions.fillStructureFromHand(player.buildings[data.move.building], player, data.move.data, $scope.meta, data.game, player.actions[0]);
+        break;
+
+      case 'Fill from Stockpile':
+        acted = actions.fillStructureFromStockpile(player.buildings[data.move.building], player, data.move.data, $scope.meta, data.game, player.actions[0]);
+        break;
+
+      case 'Lay':
+        player.hand[data.move.index].selected = true;
+        acted = actions.prepareToLay(player, data.move.color, data.game, $scope.meta, player.actions[0]);
+        break;
+
+      case 'Follow':
+        player.hand[data.move.index].selected = true;
+        acted = actions.follow(player, data.game, $scope.meta, {card:{name: '', color: player.actions[0].color}}, player.actions[0]);
+        break;
+
+      default:
+        
+    }
+    if (acted) useAction(player, data.game, $scope.meta);
+    else $scope.skipAction(data.game.players[data.currentPlayer], data.game, $scope.meta);
   }
 
   // EXTRA DETAILS ------------------------------------------------------------------------------------

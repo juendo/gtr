@@ -18,4 +18,10 @@
         )
           | Start Game
       .form-group.game-button
+        button.btn.btn-def.btn-block(
+          type='button', 
+          ng-click='addAI(meta, game)'
+        )
+          | Add AI
+      .form-group.game-button
         button.btn.btn-def.btn-block#join-game(type='button') Leave Game

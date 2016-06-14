@@ -1,12 +1,26 @@
+'use strict'
+
 // export function for listening to the socket
 module.exports = function (io) {
 
   var s = function(socket) {
     socket.on('update', function (data) {
       socket.join(data.room);
-      socket.broadcast.to(data.room).emit('change', data);
-      if (gamesList.gamePlayers[data.room]) {
-        delete gamesList.gamePlayers[data.room];
+      if (data.ai) {
+        setTimeout(function() {
+          var moves = require('./moves');
+          data.move = moves(data.game, data.currentPlayer);
+          socket.emit('change', data);
+          socket.broadcast.to(data.room).emit('change', data);
+          if (gamesList.gamePlayers[data.room]) {
+            delete gamesList.gamePlayers[data.room];
+          }
+        }, 3000);
+      } else {
+        socket.broadcast.to(data.room).emit('change', data);
+        if (gamesList.gamePlayers[data.room]) {
+          delete gamesList.gamePlayers[data.room];
+        }
       }
     });
 
@@ -23,6 +37,18 @@ module.exports = function (io) {
         socket.emit('created', {gameid: gameid});
        
         socket.join(gameid);
+        console.log(gameid);
+      }
+    });
+
+    socket.on('add ai', function(data) {
+      if (
+          gamesList.gamePlayers[data.room]
+      &&  io.sockets.adapter.rooms[data.room] 
+      &&  Object.keys(io.sockets.adapter.rooms[data.room]).length < 3) {
+        gamesList.gamePlayers[data.room].push('AI');
+        socket.emit('ai joined', 'AI');
+        socket.broadcast.to(data.room).emit('ai joined', 'AI');
       }
     });
 
@@ -59,3 +85,4 @@ var gamesList = (function() {
   };
 
 }());
+
