@@ -943,6 +943,138 @@ app.factory('actions', function ($rootScope) {
         }
       }
       return meta.finished;
+    },
+
+    createDeck: function() {
+
+      var copy1 = [{name: 'Academy', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Amphitheatre', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Aqueduct', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Archway', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Atrium', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Basilica', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Bath', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bridge', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Catacomb', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'CircusMaximus', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Circus', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Circus', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Colosseum', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Forum', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Foundry', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Fountain', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Garden', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Gate', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'LudusMagnus', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Palace', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Prison', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'School', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Scriptorium', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Sewer', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Stairway', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Statue', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Storeroom', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Temple', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Tower', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Senate', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Villa', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Vomitorium', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Wall', color: 'grey', done: false, materials: [], selected: false, copy:1}];
+      var copy2 = [], copy3 = [];
+      copy1.forEach(function(card) {
+        copy2.push({name:card.name, color:card.color, done:card.done, materials:card.materials, selected:card.selected, copy:card.copy + 1});
+        copy3.push({name:card.name, color:card.color, done:card.done, materials:card.materials, selected:card.selected, copy:card.copy + 2});
+      });
+      // helper to shuffle the deck
+      shuffle = function(array) {
+        var m = array.length, t, i;
+        while (m) {
+          i = Math.floor(Math.random() * m--);
+          t = array[m];
+          array[m] = array[i];
+          array[i] = t;
+        }
+        return array;
+      }
+      return shuffle(copy1.concat(copy2).concat(copy3));
+    },
+
+    // uses action of current player and determines who is to act next
+    useAction: function(player, game, meta) {
+      
+      // spend action of current player
+      var action = player.actions.shift();
+
+      // deal with any bath patrons that are waiting
+      var act = player.actions[0];
+      while (
+          act
+      &&  act.involvesBath
+      &&  act.takenFromPool
+      && (act.takenFromHand || !this.hasAbilityToUse('Aqueduct', player))
+      && (act.takenFromDeck || !this.hasAbilityToUse('Bar', player)))
+      {
+        player.actions.shift();
+        act = player.actions[0];
+      }
+      var newAction = player.actions[0];
+
+      // if the player has no actions left, find next player to act
+      if (newAction == undefined) {
+
+        // check if you have used an academy
+        if (player.usedAcademy) {
+          player.usedAcademy = false;
+        }
+        // check if the player has a sewer
+        if (this.hasAbilityToUse('Sewer', player) && player.pending[0] && !player.usedSewer) {
+          player.actions.push({kind:'Sewer', description:'SEWER'});
+          player.usedSewer = true
+          if (action.kind == 'Legionary') {
+            player.madeDemand = false;
+            return this.nextToAct(game, meta);
+          } else {
+            return;
+          }
+        }
+        player.usedSewer = false;
+        return this.nextToAct(game, meta);
+      }
+
+      // if they just used a rome demands action, and the next action is not a rome demands,
+      // play goes to next player with an action
+      if (action.kind == 'Rome Demands' && newAction.kind != 'Rome Demands') {
+        return this.nextToAct(game, meta);
+      }
+
+      // if the player just used a legionary action, whether skipping or not, 
+      // and has made at least one demand in the current batch of legionary actions,
+      // play moves so the other players can respond to the demand
+      if (action.kind == 'Legionary' && player.madeDemand && newAction.kind != 'Legionary') {
+        player.madeDemand = false;
+        return this.nextToAct(game, meta);
+      }
+
+      // if they have just led or followed or used the vomitorium, they dont go again
+      if (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Jack') {
+        return this.nextToAct(game, meta);
+      }
+    },
+
+    // sets the current player to the next player with actions, 
+    // or advances to the next turn if there is none
+    nextToAct: function(game, meta) {
+
+      game.players[meta.currentPlayer].hand.forEach(function(card) {
+        card.selected = false;
+      }, this);
+
+      var current = meta.currentPlayer;
+      var players = game.players;
+      // for each player after the current player
+      for (var i = current + 1; i <= current + players.length; i++) {
+        // if that player has an action, it is them to play
+        if (players[i % players.length].actions[0] != undefined) {
+          meta.currentPlayer = i % players.length;
+          return;
+        }
+      }
+
+      // move on the leader
+      meta.leader = (meta.leader + 1) % players.length;
+      meta.currentPlayer = meta.leader;
+      players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
+
+      // check for senates and pass on jacks
+      for (var i = 0; i < game.players.length; i++) {
+        for (var j = 0; j < game.players[i].pending.length; j++) {
+          if (game.players[i].pending[j].name == 'Jack') {
+            for (var k = (i + 1) % game.players.length; k != i; k = (k + 1) % game.players.length) {
+              if (this.hasAbilityToUse('Senate', game.players[k])) {
+                var card = game.players[i].pending.splice(j, 1)[0];
+                card.selected = false;
+                game.players[k].hand.push(card);
+                j--;
+                break;
+              }
+            }
+          }
+        }
+      }
+      game.players.forEach(function(player) {
+        player.pending.forEach(function(card) {
+          game.pool[card.color]++; 
+        });
+        player.pending = [];
+      });
     }
   };
 });

@@ -1,14 +1,610 @@
-/*
-socket.emit('send:message', {
-      message: $scope.message
-    });
-    */
-
 app.controller('gtrController', function($scope, socket, actions) {
+
+  // SCOPE VARIABLES ------------------------------------------------------------------------------------
+
+  // the game state (starts with just one player)
+  $scope.game = 
+    {
+      players:
+        [
+          {
+            name: "",
+            buildings: [],
+            hand: [],
+            stockpile: [],
+            clientele: [],
+            vault: [],
+            // a list of the actions the player has yet to use this turn
+            actions: [],
+            // the cards the player used to lead or follow
+            pending: []
+          }
+        ],
+      pool:
+        {
+          'yellow': 0,
+          'green': 0,
+          'red': 0,
+          'grey': 0,
+          'purple': 0,
+          'blue': 0,
+          // the number of jacks available
+          'black': 6
+        },
+      deck: actions.createDeck(),
+      sites: 
+        {
+          'yellow': 6,
+          'green': 6,
+          'red': 6,
+          'grey': 6,
+          'purple': 6,
+          'blue': 6
+        }
+    };
+
+  // extra information about the game
+  $scope.meta = 
+    { 
+      // tracks the number of updates to the game state that have been sent
+      turn: 0,
+      started: false,
+      created: false,
+      finished: false,
+      // the access-code/socket-io-room for the game
+      room: "",
+      // the index of you in the list of players
+      you: 0,
+      leader: 0,
+      currentPlayer: 0, 
+      name: "",
+      // the index of any player that has said "glory to rome" this turn, if any
+      glory: -1
+    };
+
+  // audio files
+  var ding = new Audio('/audio/bell.m4a');
+  var no = new Audio('/audio/no.wav');
+
+  var isDragging = false;
+
+  // USER INPUT FUNCTIONS ------------------------------------------------------------------------------------
+  // in general these will check if you have a suitable action to perform, and then attempt to perform that action
+  // each action return true or false depending on whether or not it worked
+  // then if an action was performed actions.useAction will be called
+
+
+  // called when a card in your hand is clicked
+  $scope.handClicked = function(player, game, meta, data) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (isDragging) isDragging = false;
+
+    else {
+      if (
+          action == undefined) 
+      {
+        return;
+      } 
+      else if (
+          action.kind == 'Rome Demands' 
+      &&  data.card.name != 'Jack') 
+      {
+        acted = actions.romeDemands(player, game, meta, data, action);
+      } 
+      else if (
+          action.kind == 'Legionary' 
+      &&  data.card.name != 'Jack') 
+      {
+        acted = actions.legionary(player, game, meta, data, action);
+      } 
+      else if (
+          action.kind == 'Lead' 
+      ||  action.kind == 'Follow') 
+      {
+        acted = actions.selectCard(player, game, meta, data, action);
+      }
+      else if (
+          action.kind == 'Patron' 
+      &&  data.card.name != 'Jack') 
+      {
+        acted = actions.patron(player, null, null, data, action);
+      }
+      else if (
+          action.kind == 'Laborer' 
+      &&  data.card.name != 'Jack') 
+      {
+        acted = actions.laborer(player, null, null, data, action);
+      }
+      else if (
+          action.kind == 'Merchant' 
+      &&  data.card.name != 'Jack') 
+      {
+        acted = actions.merchant(player, data, action);
+      }
+      else if (
+         (    action.kind == 'Craftsman'
+          ||  action.kind == 'Architect')
+        &&  data.card.name != 'Jack') {
+        acted = actions.singleSelect(player, game, meta, data, action);
+      }
+      if (acted) {
+        actions.useAction(player, game, meta);
+        update();
+      }
+      if (actions.checkIfGameOver(game, meta)) update();
+    }   
+  }
+
+  // called when the deck is clicked (and you are the current player)
+  $scope.deckClicked = function(player, game, meta) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && 
+          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
+      acted = actions.think(player, game, meta);
+    }
+    else if (action.kind == 'Merchant') {
+      acted = actions.merchant(player, {deck: game.deck, meta: meta}, action);
+    }
+    else if (action.kind == 'Patron') {
+      acted = actions.patron(player, null, null, {deck: game.deck, meta: meta}, action);
+    }
+    else if (action.kind == 'Craftsman') {
+      acted = actions.fountain(player, game.deck, meta, action);
+    }
+
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  $scope.drawOne = function(player, game, meta) {
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && 
+          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
+      acted = actions.drawOne(player, game, meta);
+    }
+
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  $scope.skipAction = function(player, game, meta) {
+    if (player.actions[0].kind == 'Rome Demands') {
+      meta.glory = player;
+    } else if (player.actions[0].kind == 'Craftsman') {
+      // deselect all cards in players hand following a craftsman for fountain
+      player.hand.forEach(function(card) {
+        card.selected = false;
+      }, this);
+    }
+    actions.useAction(player, game, meta);
+    update();
+  }
+
+  $scope.jackClicked = function(player, game, meta) {
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && 
+          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
+      acted = actions.takeJack(player, game, meta);
+    }
+
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  // called when a drag ends over a structure
+  $scope.dragEnded = function(player, data, evt, structure, game, meta) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (isDragging) isDragging = false;
+
+    if (action == undefined || 
+        (player.actions[0].kind != 'Craftsman' &&
+         player.actions[0].kind != 'Architect')) {
+      return;
+    }
+    if (data.card && action.kind == 'Craftsman') {
+      acted = actions.fillStructureFromHand(structure, player, data, meta, game, action);
+    } 
+    else if (data.material && action.kind == 'Architect') {
+      acted = actions.fillStructureFromStockpile(structure, player, data, meta, game, action);
+    }
+    else if (data.color && action.kind == 'Architect') {
+      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game, action);
+    }
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  // called when a space in the pool is clicked
+  $scope.poolClicked = function(player, color, game, meta) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action == undefined || 
+        (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Statue' && action.kind != 'Craftsman' && action.kind != 'Architect')) {
+      return;
+    } 
+    else if (action.kind == 'Lead') {
+      acted = actions.lead(player, game, meta, {card:{name: '', color: color}}, action);
+    }
+    else if (action.kind == 'Patron') {
+      acted = actions.patron(player, color, game.pool, null, action);
+    } 
+    else if (action.kind == 'Laborer') {
+      acted = actions.laborer(player, color, game.pool, null, action);
+    } 
+    else if (action.kind == 'Follow') {
+      acted = actions.follow(player, game, meta, {card:{name: '', color: color}}, action);
+    }
+    else if (action.kind == 'Statue') {
+      acted = actions.statue(player, color, game, meta, action);
+    }
+    else if (action.kind == 'Craftsman' || action.kind == 'Architect') {
+      acted = actions.prepareToLay(player, color, game, meta, action);
+    }
+
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  // called when a material in your stockpile is clicked
+  $scope.stockpileClicked = function(player, data, game, meta) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && action.kind == 'Merchant') {
+      acted = actions.merchant(player, data, action);
+    }
+
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  $scope.pendingClicked = function(player, data, game, meta) {
+
+    var action = player.actions[0];
+    var acted = false;
+
+    if (action != undefined && action.kind == 'Sewer') {
+      acted = actions.sewer(player, data);
+    }
+
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  $scope.vomitorium = function(player, pool) {
+    var action = player.actions[0];
+    if (action != undefined 
+      && (action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow')) {
+      actions.vomitorium(player, pool);
+    }
+  }
+
+  $scope.prison = function(player, building, opponent, index, game, meta) {
+    var action = player.actions[0];
+    var acted = false;
+    if (action != undefined
+      && action.kind == 'Prison') {
+      acted = actions.prison(player, building, opponent, index);
+    }
+    if (acted) {
+      actions.useAction(player, game, meta);
+      update();
+    }
+    if (actions.checkIfGameOver(game, meta)) update();
+  }
+
+  $scope.canSkipCurrentAction = function(player, game) {
+    var action = player.actions[0];
+    if (action == undefined) return false;
+    switch (action.kind) {
+      case 'Jack':
+      case 'Lead':
+      case 'Follow':
+      case 'Think':
+      case 'Statue':
+        return false;
+      case 'Rome Demands':
+        var hasMaterial = false;
+        player.hand.forEach(function(card) {
+          hasMaterial = hasMaterial || action.material == card.color;
+        });
+        return !hasMaterial || actions.hasAbilityToUse('Wall', player) || (actions.hasAbilityToUse('Palisade', player) && !actions.hasAbilityToUse('Bridge', game.players[action.demander]));
+      default:
+        return true;
+    }
+  }
+
+  $scope.hasStairway = function(player) {
+    return actions.hasAbilityToUse('Stairway', player);
+  }
+
+  $scope.hasAbilityToUseWithoutPublicBuildings = function(name, player) {
+    return actions.hasAbilityToUseWithoutPublicBuildings(name, player);
+  }
+
+  $scope.hasAbilityToUse = function(building, player) {
+    return actions.hasAbilityToUse(building, player);
+  };
+
+  // remove a dragging card from hand
+  $scope.removeFromHand = function(player, data, evt) {
+    player.hand.splice(data.index, 1);
+  }
+
+  $scope.influence = function(player) {
+    return actions.influence(player);
+  }
+
+  $scope.hasArchway = function(player) {
+    return !!actions.hasAbilityToUse('Archway', player);
+  }
+
+  $scope.score = function(player) {
+    return actions.score(player);
+  };
+
+  $scope.clienteleLimit = function(player) {
+    return actions.clienteleLimit(player);
+  };
+
+  $scope.vaultLimit = function(player) {
+    return actions.vaultLimit(player);
+  }
+
+  $scope.relevantAction = function(building, action) {
+    switch (building) {
+      case 'Archway':
+      return action.kind == 'Architect';
+      case 'Stairway':
+      return action.kind == 'Architect' && !action.usedStairway;
+      case 'Aqueduct':
+      return action.kind == 'Patron' && !action.takenFromHand;
+      case 'Bar':
+      return action.kind == 'Patron' && !action.takenFromDeck;
+      case 'Bath':
+      return action.kind == 'Patron';
+      case 'Dock':
+      return action.kind == 'Laborer' && !action.takenFromHand;
+      case 'Fountain':
+      return action.kind == 'Craftsman';
+      case 'Atrium':
+      return action.kind == 'Merchant' && !action.takenFromDeck;
+      case 'Basilica':
+      return action.kind == 'Merchant' && !action.takenFromHand;
+      case 'Bridge':
+      case 'Colosseum':
+      return action.kind == 'Legionary';
+      case 'Wall':
+      case 'Palisade':
+      return action.kind == 'Rome Demands';
+      case 'Palace':
+      return action.kind == 'Think' || action.kind == 'Follow';
+      case 'Latrine':
+      case 'Vomitorium':
+      return action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow';
+      default:
+      return false;
+    }
+  }
+
+  $scope.yourTurn = function() {
+    return $scope.meta.currentPlayer == $scope.meta.you && !$scope.meta.finished;
+  }
+
+  $scope.you = function() {
+    return $scope.game.players[$scope.meta.you];
+  }
+
+  $scope.buildingWidth = function(len) {
+    var ratio = 1;
+    // the width of a player box
+    var width = 95 / ratio;
+    var height = $(window).height() * 0.68 * 0.92;
+
+    while (0.01 * (292/208) * $(window).width() * width * Math.ceil(len / ratio) / $scope.game.players.length + 10 * Math.ceil(len / ratio) > height) {
+      width = 95 / ++ratio;
+    }
+    return width;
+  }
+
+  applyMove = function(data) {
+    console.log(data);
+    var player = data.game.players[data.currentPlayer];
+    var acted = false;
+    switch (data.move.kind) {
+
+      case 'Refill':
+        acted = actions.think(player, data.game, $scope.meta);
+        break;
+
+      case 'Lead':
+        for (var i = 0; i < data.move.cards.length; i++) {
+          player.hand[data.move.cards[i]].selected = true;
+        }
+        acted = actions.lead(player, data.game, $scope.meta, {card:{name: '', color: data.move.role}}, player.actions[0]);
+        break;
+
+      case 'Patron':
+        acted = actions.patron(player, data.move.color, data.game.pool, null, player.actions[0]);
+        break;
+
+      case 'Merchant':
+        acted = actions.merchant(player, data.move.data, player.actions[0]);
+        break;
+
+      case 'Laborer':
+        acted = actions.laborer(player, data.move.color, data.game.pool, null, player.actions[0]);
+        break;
+
+      case 'Fill from Hand':
+        acted = actions.fillStructureFromHand(player.buildings[data.move.building], player, data.move.data, $scope.meta, data.game, player.actions[0]);
+        break;
+
+      case 'Fill from Stockpile':
+        acted = actions.fillStructureFromStockpile(player.buildings[data.move.building], player, data.move.data, $scope.meta, data.game, player.actions[0]);
+        break;
+
+      case 'Lay':
+        player.hand[data.move.index].selected = true;
+        acted = actions.prepareToLay(player, data.move.color, data.game, $scope.meta, player.actions[0]);
+        break;
+
+      case 'Follow':
+        player.hand[data.move.index].selected = true;
+        acted = actions.follow(player, data.game, $scope.meta, {card:{name: '', color: player.actions[0].color}}, player.actions[0]);
+        break;
+
+      case 'Legionary':
+        player.hand[data.move.index].selected = true;
+        acted = actions.legionary(player, data.game, $scope.meta, data.move.data, player.actions[0]);
+        break;
+
+      case 'Rome Demands':
+        acted = actions.romeDemands(player, data.game, $scope.meta, data.move.data, player.actions[0]);
+        break;
+
+      default:
+        
+    }
+    if (acted) {
+      actions.useAction(player, data.game, $scope.meta);
+      update();
+    }
+    else $scope.skipAction(data.game.players[data.currentPlayer], data.game, $scope.meta);
+  }
 
   $(window).resize(function() {
     $scope.$apply();
   });
+
+  // GAME STATE functions ------------------------------------------------------------------------------------
+
+  // when create game button is pressed
+  $scope.createGame = function(meta, player) {
+    if (meta.name.length > 0 && meta.name.length < 15) {
+      // broadcast to the socket that we want to create a game
+      socket.emit('create', meta.name);
+      player.name = meta.name;
+      meta.created = true;
+    }
+  };
+
+  // when join game button is pressed
+  $scope.joinGame = function(meta) {
+    socket.emit('join', {room: meta.room, name: meta.name});
+  }
+
+  // when start game is pressed
+  $scope.start = function(meta, game) {
+    if (game.players.length < 2) return;
+    meta.started = true;
+    for (var i = 0; i < game.players.length; i++) {
+      game.pool[game.deck.pop().color]++;
+      while (game.players[i].hand.length < 4) {
+        game.players[i].hand.push(game.deck.pop());
+      }
+      game.players[i].hand.push({name: 'Jack', color: 'black'});
+      game.pool['black']--;
+    }
+    meta.leader = Math.floor(Math.random() * (game.players.length));
+    meta.currentPlayer = meta.leader;
+    game.players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
+    update();
+  }
+
+  $scope.addAI = function(meta, game) {
+    socket.emit('add ai', {room: meta.room});
+  }
+
+  $scope.triggerReconnect = function() {
+    console.log('triggered reconnect');
+    socket.emit('reconnection', {
+      game: $scope.game,
+      leader: $scope.meta.leader,
+      turn: $scope.meta.turn,
+      currentPlayer: $scope.meta.currentPlayer,
+      room: $scope.meta.room,
+      finished: $scope.meta.finished
+    });
+  };
+
+  $scope.$on('draggable:start', function (data) {
+    isDragging = true;
+  });
+
+  // indicate to other players that there has been a change in game state
+  update = function() {
+
+    if (isDragging) isDragging = false;
+
+    // reset all glory to rome animation statuses
+    $scope.game.players.forEach(function(player) {
+      if (!$scope.meta.glory || player != $scope.meta.glory) {
+        player.glory1 = false;
+        player.glory2 = false;
+      }
+    });
+
+    // if the player pressed glory to rome
+    if ($scope.meta.glory) {
+      var player = $scope.meta.glory;
+      // trigger glory to rome animation
+      if (player.glory1) {
+        player.glory1 = false;
+        player.glory2 = true;
+      } else {
+        player.glory1 = true;
+        player.glory2 = false;
+      }
+      $scope.meta.glory = null;
+    }
+    socket.emit('update', {
+      game: $scope.game,
+      leader: $scope.meta.leader,
+      turn: ++$scope.meta.turn,
+      currentPlayer: $scope.meta.currentPlayer,
+      room: $scope.meta.room,
+      finished: $scope.meta.finished,
+      ai: $scope.game.players[$scope.meta.currentPlayer].ai
+    });
+  }
 
   // SOCKET behaviour ------------------------------------------------------------------------------------
 
@@ -85,633 +681,6 @@ app.controller('gtrController', function($scope, socket, actions) {
       finished: $scope.meta.finished
     });
   });
-
-  // GAME STATE functions ------------------------------------------------------------------------------------
-
-  // when create game button is pressed
-  $scope.createGame = function(meta, player) {
-    if (meta.name.length > 0 && meta.name.length < 15) {
-      // broadcast to the socket that we want to create a game
-      socket.emit('create', meta.name);
-      player.name = meta.name;
-      meta.created = true;
-    }
-  };
-
-  // when join game button is pressed
-  $scope.joinGame = function(meta) {
-    socket.emit('join', {room: meta.room, name: meta.name});
-  }
-
-  // when start game is pressed
-  $scope.start = function(meta, game) {
-    if (game.players.length < 2) return;
-    meta.started = true;
-    for (var i = 0; i < game.players.length; i++) {
-      game.pool[game.deck.pop().color]++;
-      while (game.players[i].hand.length < 4) {
-        game.players[i].hand.push(game.deck.pop());
-      }
-      game.players[i].hand.push({name: 'Jack', color: 'black'});
-      game.pool['black']--;
-    }
-    meta.leader = Math.floor(Math.random() * (game.players.length));
-    meta.currentPlayer = meta.leader;
-    game.players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
-    update();
-  }
-
-  $scope.addAI = function(meta, game) {
-    socket.emit('add ai', {room: meta.room});
-  }
-
-  $scope.triggerReconnect = function() {
-    console.log('triggered reconnect');
-    socket.emit('reconnection', {
-      game: $scope.game,
-      leader: $scope.meta.leader,
-      turn: $scope.meta.turn,
-      currentPlayer: $scope.meta.currentPlayer,
-      room: $scope.meta.room,
-      finished: $scope.meta.finished
-    });
-  };
-
-  $scope.$on('draggable:start', function (data) {
-    isDragging = true;
-  });
-
-  // indicate to other players that there has been a change in game state
-  update = function() {
-
-    // reset all glory to rome animation statuses
-    $scope.game.players.forEach(function(player) {
-      if (!$scope.meta.glory || player != $scope.meta.glory) {
-        player.glory1 = false;
-        player.glory2 = false;
-      }
-    });
-
-    // if the player pressed glory to rome
-    if ($scope.meta.glory) {
-      var player = $scope.meta.glory;
-      // trigger glory to rome animation
-      if (player.glory1) {
-        player.glory1 = false;
-        player.glory2 = true;
-      } else {
-        player.glory1 = true;
-        player.glory2 = false;
-      }
-      $scope.meta.glory = null;
-    }
-    socket.emit('update', {
-      game: $scope.game,
-      leader: $scope.meta.leader,
-      turn: ++$scope.meta.turn,
-      currentPlayer: $scope.meta.currentPlayer,
-      room: $scope.meta.room,
-      finished: $scope.meta.finished,
-      ai: $scope.game.players[$scope.meta.currentPlayer].ai
-    });
-  }
-
-  // SCOPE VARIABLES ------------------------------------------------------------------------------------
-  isDragging = false;
-
-  var ding = new Audio('/audio/bell.m4a');
-  var no = new Audio('/audio/no.wav');
-
-  // the game state
-  $scope.game = {players:[{name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}],pool:{'yellow':0,'green':0,'red':0,'grey':0,'purple':0,'blue':0,'black':6},deck:[],sites:{'yellow':6,'green':6,'red':6,'grey':6,'purple':6,'blue':6}};
-
-  $scope.meta = { turn: 0, started: false, created: false, finished: false, room: "", you: 0, leader: 0, currentPlayer: 0, name: "" , glory: -1};
-
-
-  // helper to shuffle the deck
-  shuffle = function(array) {
-    var m = array.length, t, i;
-    while (m) {
-      i = Math.floor(Math.random() * m--);
-      t = array[m];
-      array[m] = array[i];
-      array[i] = t;
-    }
-    return array;
-  }
-
-  // the cards in the deck
-  var cards = [{name: 'Academy', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Amphitheatre', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Aqueduct', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Archway', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Atrium', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Bar', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Basilica', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Bath', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Bridge', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Catacomb', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'CircusMaximus', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Circus', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Circus', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Dock', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Colosseum', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Forum', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Foundry', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Fountain', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Garden', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Gate', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Insula', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Latrine', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'LudusMagnus', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Market', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Palace', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:1},{name: 'Palisade', color: 'green', done: false, materials: [], selected: false, copy:4},{name: 'Prison', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:1},{name: 'Road', color: 'yellow', done: false, materials: [], selected: false, copy:4},{name: 'School', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Scriptorium', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Sewer', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:1},{name: 'Stairway', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Statue', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Storeroom', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Temple', color: 'purple', done: false, materials: [], selected: false, copy:1},{name: 'Tower', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Senate', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Villa', color: 'blue', done: false, materials: [], selected: false, copy:1},{name: 'Vomitorium', color: 'grey', done: false, materials: [], selected: false, copy:1},{name: 'Wall', color: 'grey', done: false, materials: [], selected: false, copy:1}];
-  var cards2 = [];
-  var cards3 = [];
-  cards.forEach(function(card) {
-    cards2.push({name:card.name, color:card.color, done:card.done, materials:card.materials, selected:card.selected, copy:card.copy + 1});
-    cards3.push({name:card.name, color:card.color, done:card.done, materials:card.materials, selected:card.selected, copy:card.copy + 2});
-  }, this);
-
-  // the deck is 3 lots of the above cards, shuffled
-  $scope.game.deck = shuffle(cards.concat(cards2).concat(cards3));
-
-  $scope.yourTurn = function() {
-    return $scope.meta.currentPlayer == $scope.meta.you && !$scope.meta.finished;
-  }
-
-  $scope.you = function() {
-    return $scope.game.players[$scope.meta.you];
-  }
-
-  $scope.buildingWidth = function(len) {
-    var ratio = 1;
-    // the width of a player box
-    var width = 95 / ratio;
-    var height = $(window).height() * 0.68 * 0.92;
-
-    while (0.01 * (292/208) * $(window).width() * width * Math.ceil(len / ratio) / $scope.game.players.length + 10 * Math.ceil(len / ratio) > height) {
-      width = 95 / ++ratio;
-    }
-    return width;
-  }
-  // USER INPUT FUNCTIONS ------------------------------------------------------------------------------------
-  // in general these will check if you have a suitable action to perform, and then attempt to perform that action
-  // each action return true or false depending on whether or not it worked
-  // then if an action was performed useAction will be called
-
-
-  // called when a card in your hand is clicked
-  $scope.handClicked = function(player, game, meta, data) {
-
-    var action = player.actions[0];
-    var acted = false;
-
-    if (isDragging) isDragging = false;
-
-    else {
-      if (action == undefined) {
-        return;
-      } 
-      else if (action.kind == 'Rome Demands' && data.card.name != 'Jack') {
-        acted = actions.romeDemands(player, game, meta, data, action);
-      } 
-      else if (action.kind == 'Legionary' && data.card.name != 'Jack') {
-        acted = actions.legionary(player, game, meta, data, action);
-      } 
-      else if (action.kind == 'Lead' || action.kind == 'Follow') {
-        acted = actions.selectCard(player, game, meta, data, action);
-      }
-      else if (action.kind == 'Patron' && data.card.name != 'Jack') {
-        acted = actions.patron(player, null, null, data, action);
-      }
-      else if (action.kind == 'Laborer' && data.card.name != 'Jack') {
-        acted = actions.laborer(player, null, null, data, action);
-      }
-      else if (action.kind == 'Merchant' && data.card.name != 'Jack') {
-        acted = actions.merchant(player, data, action);
-      }
-      else if ((action.kind == 'Craftsman'
-              || action.kind == 'Architect')
-              && data.card.name != 'Jack') {
-        acted = actions.singleSelect(player, game, meta, data, action);
-        //acted = actions.layFoundation(player, game, meta, data, action);
-      }
-      if (acted) useAction(player, game, meta);
-      if (actions.checkIfGameOver(game, meta)) update();
-    }   
-  }
-
-  // called when the deck is clicked (and you are the current player)
-  $scope.deckClicked = function(player, game, meta) {
-
-    var action = player.actions[0];
-    var acted = false;
-
-    if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.think(player, game, meta);
-    }
-    else if (action.kind == 'Merchant') {
-      acted = actions.merchant(player, {deck: game.deck, meta: meta}, action);
-    }
-    else if (action.kind == 'Patron') {
-      acted = actions.patron(player, null, null, {deck: game.deck, meta: meta}, action);
-    }
-    else if (action.kind == 'Craftsman') {
-      acted = actions.fountain(player, game.deck, meta, action);
-    }
-
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  $scope.drawOne = function(player, game, meta) {
-    var action = player.actions[0];
-    var acted = false;
-
-    if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.drawOne(player, game, meta);
-    }
-
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  $scope.skipAction = function(player, game, meta) {
-    if (player.actions[0].kind == 'Rome Demands') {
-      meta.glory = player;
-    } else if (player.actions[0].kind == 'Craftsman') {
-      // deselect all cards in players hand following a craftsman for fountain
-      player.hand.forEach(function(card) {
-        card.selected = false;
-      }, this);
-    }
-    useAction(player, game, meta);
-  }
-
-  $scope.canSkipCurrentAction = function(player, game) {
-    var action = player.actions[0];
-    if (action == undefined) return false;
-    switch (action.kind) {
-      case 'Jack':
-      case 'Lead':
-      case 'Follow':
-      case 'Think':
-      case 'Statue':
-        return false;
-      case 'Rome Demands':
-        var hasMaterial = false;
-        player.hand.forEach(function(card) {
-          hasMaterial = hasMaterial || action.material == card.color;
-        });
-        return !hasMaterial || actions.hasAbilityToUse('Wall', player) || (actions.hasAbilityToUse('Palisade', player) && !actions.hasAbilityToUse('Bridge', game.players[action.demander]));
-      default:
-        return true;
-    }
-  }
-
-  $scope.jackClicked = function(player, game, meta) {
-    var action = player.actions[0];
-    var acted = false;
-
-    if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.takeJack(player, game, meta);
-    }
-
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  // called when a drag ends over a structure
-  $scope.dragEnded = function(player, data, evt, structure, game, meta) {
-
-    var action = player.actions[0];
-    var acted = false;
-
-    if (isDragging) isDragging = false;
-
-    if (action == undefined || 
-        (player.actions[0].kind != 'Craftsman' &&
-         player.actions[0].kind != 'Architect')) {
-      return;
-    }
-    if (data.card && action.kind == 'Craftsman') {
-      acted = actions.fillStructureFromHand(structure, player, data, meta, game, action);
-    } 
-    else if (data.material && action.kind == 'Architect') {
-      acted = actions.fillStructureFromStockpile(structure, player, data, meta, game, action);
-    }
-    else if (data.color && action.kind == 'Architect') {
-      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game, action);
-    }
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  // called when a space in the pool is clicked
-  $scope.poolClicked = function(player, color, game, meta) {
-
-    var action = player.actions[0];
-    var acted = false;
-
-    if (action == undefined || 
-        (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Statue' && action.kind != 'Craftsman' && action.kind != 'Architect')) {
-      return;
-    } 
-    else if (action.kind == 'Lead') {
-      acted = actions.lead(player, game, meta, {card:{name: '', color: color}}, action);
-    }
-    else if (action.kind == 'Patron') {
-      acted = actions.patron(player, color, game.pool, null, action);
-    } 
-    else if (action.kind == 'Laborer') {
-      acted = actions.laborer(player, color, game.pool, null, action);
-    } 
-    else if (action.kind == 'Follow') {
-      acted = actions.follow(player, game, meta, {card:{name: '', color: color}}, action);
-    }
-    else if (action.kind == 'Statue') {
-      acted = actions.statue(player, color, game, meta, action);
-    }
-    else if (action.kind == 'Craftsman' || action.kind == 'Architect') {
-      acted = actions.prepareToLay(player, color, game, meta, action);
-    }
-
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  // called when a material in your stockpile is clicked
-  $scope.stockpileClicked = function(player, data, game, meta) {
-
-    var action = player.actions[0];
-    var acted = false;
-
-    if (action != undefined && action.kind == 'Merchant') {
-      acted = actions.merchant(player, data, action);
-    }
-
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  $scope.pendingClicked = function(player, data, game, meta) {
-
-    var action = player.actions[0];
-    var acted = false;
-
-    if (action != undefined && action.kind == 'Sewer') {
-      acted = actions.sewer(player, data);
-    }
-
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  $scope.vomitorium = function(player, pool) {
-    var action = player.actions[0];
-    if (action != undefined 
-      && (action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow')) {
-      actions.vomitorium(player, pool);
-    }
-  }
-
-  $scope.prison = function(player, building, opponent, index, game, meta) {
-    var action = player.actions[0];
-    var acted = false;
-    if (action != undefined
-      && action.kind == 'Prison') {
-      acted = actions.prison(player, building, opponent, index);
-    }
-    if (acted) useAction(player, game, meta);
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  $scope.hasStairway = function(player) {
-    return actions.hasAbilityToUse('Stairway', player);
-  }
-
-  $scope.hasAbilityToUseWithoutPublicBuildings = function(name, player) {
-    return actions.hasAbilityToUseWithoutPublicBuildings(name, player);
-  }
-
-  $scope.hasAbilityToUse = function(building, player) {
-    return actions.hasAbilityToUse(building, player);
-  };
-
-  // remove a dragging card from hand
-  $scope.removeFromHand = function(player, data, evt) {
-    player.hand.splice(data.index, 1);
-  }
-
-  $scope.influence = function(player) {
-    return actions.influence(player);
-  }
-
-  $scope.hasArchway = function(player) {
-    return !!actions.hasAbilityToUse('Archway', player);
-  }
-
-  $scope.score = function(player) {
-    return actions.score(player);
-  };
-
-  $scope.clienteleLimit = function(player) {
-    return actions.clienteleLimit(player);
-  };
-
-  $scope.vaultLimit = function(player) {
-    return actions.vaultLimit(player);
-  }
-
-  $scope.relevantAction = function(building, action) {
-    switch (building) {
-      case 'Archway':
-      return action.kind == 'Architect';
-      case 'Stairway':
-      return action.kind == 'Architect' && !action.usedStairway;
-      case 'Aqueduct':
-      return action.kind == 'Patron' && !action.takenFromHand;
-      case 'Bar':
-      return action.kind == 'Patron' && !action.takenFromDeck;
-      case 'Bath':
-      return action.kind == 'Patron';
-      case 'Dock':
-      return action.kind == 'Laborer' && !action.takenFromHand;
-      case 'Fountain':
-      return action.kind == 'Craftsman';
-      case 'Atrium':
-      return action.kind == 'Merchant' && !action.takenFromDeck;
-      case 'Basilica':
-      return action.kind == 'Merchant' && !action.takenFromHand;
-      case 'Bridge':
-      case 'Colosseum':
-      return action.kind == 'Legionary';
-      case 'Wall':
-      case 'Palisade':
-      return action.kind == 'Rome Demands';
-      case 'Palace':
-      return action.kind == 'Think' || action.kind == 'Follow';
-      case 'Latrine':
-      case 'Vomitorium':
-      return action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow';
-      default:
-      return false;
-    }
-  }
-
-  // META ACTIONS ---------------------------------------------------------------------------------------------------
-
-  // uses action of current player and determines who is to act next
-  useAction = function(player, game, meta) {
-    
-    // spend action of current player
-    var action = player.actions.shift();
-
-    // deal with any bath patrons that are waiting
-    var act = player.actions[0];
-    while (
-        act
-    &&  act.involvesBath
-    &&  act.takenFromPool
-    && (act.takenFromHand || !actions.hasAbilityToUse('Aqueduct', player))
-    && (act.takenFromDeck || !actions.hasAbilityToUse('Bar', player)))
-    {
-      player.actions.shift();
-      act = player.actions[0];
-    }
-    var newAction = player.actions[0];
-
-    if (isDragging) isDragging = false;
-
-    // if the player has no actions left, find next player to act
-    if (newAction == undefined) {
-
-      // check if you have used an academy
-      if (player.usedAcademy) {
-        player.usedAcademy = false;
-      }
-      // check if the player has a sewer
-      if (actions.hasAbilityToUse('Sewer', player) && player.pending[0] && !player.usedSewer) {
-        player.actions.push({kind:'Sewer', description:'SEWER'});
-        player.usedSewer = true
-        if (action.kind == 'Legionary') {
-          player.madeDemand = false;
-          return nextToAct(game, meta);
-        } else {
-          update();
-          return;
-        }
-      }
-      player.usedSewer = false;
-      return nextToAct(game, meta);
-    }
-
-    // if they just used a rome demands action, and the next action is not a rome demands,
-    // play goes to next player with an action
-    if (action.kind == 'Rome Demands' && newAction.kind != 'Rome Demands') {
-      return nextToAct(game, meta);
-    }
-
-    // if the player just used a legionary action, whether skipping or not, 
-    // and has made at least one demand in the current batch of legionary actions,
-    // play moves so the other players can respond to the demand
-    if (action.kind == 'Legionary' && player.madeDemand && newAction.kind != 'Legionary') {
-      player.madeDemand = false;
-      return nextToAct(game, meta);
-    }
-
-    // if they have just led or followed or used the vomitorium, they dont go again
-    if (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Jack') {
-      return nextToAct(game, meta);
-    }
-
-    update();
-  }
-
-  // sets the current player to the next player with actions, 
-  // or advances to the next turn if there is none
-  nextToAct = function(game, meta) {
-
-    game.players[meta.currentPlayer].hand.forEach(function(card) {
-      card.selected = false;
-    }, this);
-
-    var current = meta.currentPlayer;
-    var players = game.players;
-    // for each player after the current player
-    for (var i = current + 1; i <= current + players.length; i++) {
-      // if that player has an action, it is them to play
-      if (players[i % players.length].actions[0] != undefined) {
-        meta.currentPlayer = i % players.length;
-        update();
-        return;
-      }
-    }
-
-    // move on the leader
-    meta.leader = (meta.leader + 1) % players.length;
-    meta.currentPlayer = meta.leader;
-    players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
-
-    // check for senates and pass on jacks
-    for (var i = 0; i < game.players.length; i++) {
-      for (var j = 0; j < game.players[i].pending.length; j++) {
-        if (game.players[i].pending[j].name == 'Jack') {
-          for (var k = (i + 1) % game.players.length; k != i; k = (k + 1) % game.players.length) {
-            if (actions.hasAbilityToUse('Senate', game.players[k])) {
-              var card = game.players[i].pending.splice(j, 1)[0];
-              card.selected = false;
-              game.players[k].hand.push(card);
-              j--;
-              break;
-            }
-          }
-        }
-      }
-    }
-    game.players.forEach(function(player) {
-      player.pending.forEach(function(card) {
-        game.pool[card.color]++; 
-      }, this);
-      player.pending = [];
-    }, this);
-
-    update();
-  }
-
-  applyMove = function(data) {
-    console.log(data);
-    var player = data.game.players[data.currentPlayer];
-    var acted = false;
-    switch (data.move.kind) {
-
-      case 'Refill':
-        acted = actions.think(player, data.game, $scope.meta);
-        break;
-
-      case 'Lead':
-        for (var i = 0; i < data.move.cards.length; i++) {
-          player.hand[i].selected = true;
-        }
-        acted = actions.lead(player, data.game, $scope.meta, {card:{name: '', color: data.move.role}}, player.actions[0]);
-        break;
-
-      case 'Patron':
-        acted = actions.patron(player, data.move.color, data.game.pool, null, player.actions[0]);
-        break;
-
-      case 'Merchant':
-        acted = actions.merchant(player, data.move.data, player.actions[0]);
-        break;
-
-      case 'Laborer':
-        acted = actions.laborer(player, data.move.color, data.game.pool, null, player.actions[0]);
-        break;
-
-      case 'Fill from Hand':
-        acted = actions.fillStructureFromHand(player.buildings[data.move.building], player, data.move.data, $scope.meta, data.game, player.actions[0]);
-        break;
-
-      case 'Fill from Stockpile':
-        acted = actions.fillStructureFromStockpile(player.buildings[data.move.building], player, data.move.data, $scope.meta, data.game, player.actions[0]);
-        break;
-
-      case 'Lay':
-        player.hand[data.move.index].selected = true;
-        acted = actions.prepareToLay(player, data.move.color, data.game, $scope.meta, player.actions[0]);
-        break;
-
-      case 'Follow':
-        player.hand[data.move.index].selected = true;
-        acted = actions.follow(player, data.game, $scope.meta, {card:{name: '', color: player.actions[0].color}}, player.actions[0]);
-        break;
-
-      default:
-        
-    }
-    if (acted) useAction(player, data.game, $scope.meta);
-    else $scope.skipAction(data.game.players[data.currentPlayer], data.game, $scope.meta);
-  }
 
   // EXTRA DETAILS ------------------------------------------------------------------------------------
 

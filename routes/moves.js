@@ -28,6 +28,10 @@ class GameState {
       return this.craftsman();
       case 'Architect':
       return this.architect();
+      case 'Legionary':
+      return this.legionary();
+      case 'Rome Demands':
+      return this.romeDemands();
       default:
       return {kind: 'Skip'};
     }
@@ -41,7 +45,46 @@ class GameState {
     // or think - take one card, refill hand, take a jack
     var moves = [];
     for (var i = 0; i < this.player.hand.length; i++) {
-      moves.push({kind: 'Lead', cards: [i], role: this.player.hand[i].color == 'black' ? 'purple' : this.player.hand[i].color});
+      if (this.player.hand[i].color == 'blue' && this.player.stockpile.length > 0) {
+        moves.push({kind: 'Lead', cards: [i], role: 'blue'});
+      }
+      else if (this.player.hand[i].color == 'yellow' && this.game.pool['green'] + this.game.pool['yellow'] + this.game.pool['red'] + this.game.pool['grey'] + this.game.pool['purple'] + this.game.pool['blue'] > 0) {
+        moves.push({kind: 'Lead', cards: [i], role: 'yellow'});
+      }
+      else if (this.player.hand[i].color == 'green' && this.player.hand.length > 4) {
+        moves.push({kind: 'Lead', cards: [i], role: 'green'});
+      }
+      else if (this.player.hand[i].color == 'grey') {
+        var unfinished = 0;
+        this.player.buildings.forEach(function(building) {
+          if (building.done) unfinished++;
+        });
+        if (unfinished < 3 || this.player.stockpile.length > 0) {
+          moves.push({kind: 'Lead', cards: [i], role: 'grey'});
+        }
+      }
+      else if (this.player.hand[i].color == 'red' && this.player.hand.length > 3) {
+        moves.push({kind: 'Lead', cards: [i], role: 'red'});
+      }
+      else if (this.player.hand[i].color == 'purple') {
+        var inf = 2;
+        this.player.buildings.forEach(function(building) {
+          if (building.done && (building.siteColor == 'green' || building.siteColor == 'yellow')) {
+            inf += 1;
+          } else if (building.done && (building.siteColor == 'red' || building.siteColor == 'grey')) {
+            inf += 2;
+          } else if (building.done && (building.siteColor == 'blue' || building.siteColor == 'purple')) {
+            inf += 3;
+          }
+        });
+        if (this.player.clientele.length < inf) {
+          moves.push({kind: 'Lead', cards: [i], role: 'purple'});
+        }
+      }
+      else if (this.player.hand[i].color == 'black' && this.player.hand.length > 4) {
+        moves.push({kind: 'Lead', cards: [i], role: 'green'});
+      }
+      
     }
     moves.push({kind: 'Refill'});
     moves.push({kind: 'Draw One'});
@@ -54,12 +97,45 @@ class GameState {
   follow() {
     var moves = [];
     for (var i = 0; i < this.player.hand.length; i++) {
-      if (
-          this.player.hand[i].color == this.player.actions[0].color
-      ||  this.player.hand[i].color == 'black') 
-      {
-        moves.push({kind: 'Follow', index: i});
+      if (this.player.hand[i].color == this.player.actions[0].color || this.player.hand[i].color == 'black') {
+        if (this.player.actions[0].color == 'blue' && this.player.stockpile.length > 0) {
+          moves.push({kind: 'Follow', index: i});
+        }
+        else if (this.player.actions[0].color == 'yellow' && this.game.pool['green'] + this.game.pool['yellow'] + this.game.pool['red'] + this.game.pool['grey'] + this.game.pool['purple'] + this.game.pool['blue'] > 0) {
+          moves.push({kind: 'Follow', index: i});
+        }
+        else if (this.player.actions[0].color == 'green' && this.player.hand.length > 4) {
+          moves.push({kind: 'Follow', index: i});
+        }
+        else if (this.player.actions[0].color == 'grey') {
+          var unfinished = 0;
+          this.player.buildings.forEach(function(building) {
+            if (building.done) unfinished++;
+          });
+          if (unfinished < 3 || this.player.stockpile.length > 0) {
+            moves.push({kind: 'Follow', index: i});
+          }
+        }
+        else if (this.player.actions[0].color == 'red' && this.player.hand.length > 3) {
+          moves.push({kind: 'Follow', index: i});
+        }
+        else if (this.player.actions[0].color == 'purple') {
+          var inf = 2;
+          this.player.buildings.forEach(function(building) {
+            if (building.done && (building.siteColor == 'green' || building.siteColor == 'yellow')) {
+              inf += 1;
+            } else if (building.done && (building.siteColor == 'red' || building.siteColor == 'grey')) {
+              inf += 2;
+            } else if (building.done && (building.siteColor == 'blue' || building.siteColor == 'purple')) {
+              inf += 3;
+            }
+          });
+          if (this.player.clientele.length < inf) {
+            moves.push({kind: 'Follow', index: i});
+          }
+        }
       }
+      
     }
     moves.push({kind: 'Refill'});
     moves.push({kind: 'Draw One'});
@@ -87,7 +163,7 @@ class GameState {
       moves.push({kind: 'Patron', color: 'red'});
     }
     if (this.game.pool['yellow']) {
-      moves.push({kind: 'Patron', color: 'purple'});
+      moves.push({kind: 'Patron', color: 'yellow'});
     }
     moves.push({kind: 'Skip'});
     return moves[0];
@@ -169,6 +245,31 @@ class GameState {
       }
     }
     moves.push({kind:'Skip'});
+
+    return moves[0];
+  }
+
+  legionary() {
+    var moves = [];
+    for (var i = 0; i < this.player.hand.length; i++) {
+      if (!this.player.hand[i].selected) {
+        moves.push({kind: 'Legionary', index: i, data: {card: {color: this.player.hand[i].color}} });
+      }
+    }
+    moves.push({kind: 'Skip'});
+
+    return moves[0];
+  }
+
+  romeDemands() {
+    var moves = [];
+    var color = this.player.actions[0].material;
+    for (var i = 0; i < this.player.hand.length; i++) {
+      if (this.player.hand[i].color == color) {
+        moves.push({kind: 'Rome Demands', index: i, data: {index: i, card: {color: color}}});
+      }
+    }
+    if (moves.length == 0) moves.push({kind: 'Skip'});
 
     return moves[0];
   }
