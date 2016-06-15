@@ -46,7 +46,19 @@ class GameState {
     var moves = [];
     for (var i = 0; i < this.player.hand.length; i++) {
       if (this.player.hand[i].color == 'blue' && this.player.stockpile.length > 0) {
-        moves.push({kind: 'Lead', cards: [i], role: 'blue'});
+        var inf = 2;
+        this.player.buildings.forEach(function(building) {
+          if (building.done && (building.siteColor == 'green' || building.siteColor == 'yellow')) {
+            inf += 1;
+          } else if (building.done && (building.siteColor == 'red' || building.siteColor == 'grey')) {
+            inf += 2;
+          } else if (building.done && (building.siteColor == 'blue' || building.siteColor == 'purple')) {
+            inf += 3;
+          }
+        });
+        if (player.vault.length < inf) {
+          moves.push({kind: 'Lead', cards: [i], role: 'blue'});
+        }
       }
       else if (this.player.hand[i].color == 'yellow' && this.game.pool['green'] + this.game.pool['yellow'] + this.game.pool['red'] + this.game.pool['grey'] + this.game.pool['purple'] + this.game.pool['blue'] > 0) {
         moves.push({kind: 'Lead', cards: [i], role: 'yellow'});
@@ -180,22 +192,34 @@ class GameState {
 
   laborer() {
     var moves = [];
-    if (this.game.pool['blue']) {
+    var wants = {'yellow': false, 'green': false, 'red': false, 'grey': false, 'blue': false, 'purple': false};
+    // prioritise materials for which the player has an unfinished building
+    for (var i = 0; i < this.player.buildings.length; i++) {
+      if (
+         !this.player.buildings[i].done
+      && !wants[this.player.buildings[i].siteColor] 
+      &&  this.game.pool[this.player.buildings[i].siteColor])
+      {
+        wants[this.player.buildings[i].siteColor] = true;
+        moves.push({kind: 'Laborer', color: this.player.buildings[i].siteColor});
+      }
+    }
+    if (!wants['blue'] && this.game.pool['blue']) {
       moves.push({kind: 'Laborer', color: 'blue'});
     }
-    if (this.game.pool['purple']) {
+    if (!wants['purple'] && this.game.pool['purple']) {
       moves.push({kind: 'Laborer', color: 'purple'});
     }
-    if (this.game.pool['green']) {
-      moves.push({kind: 'Laborer', color: 'green'});
-    }
-    if (this.game.pool['grey']) {
+    if (!wants['grey'] && this.game.pool['grey']) {
       moves.push({kind: 'Laborer', color: 'grey'});
     }
-    if (this.game.pool['red']) {
+    if (!wants['red'] && this.game.pool['red']) {
       moves.push({kind: 'Laborer', color: 'red'});
     }
-    if (this.game.pool['yellow']) {
+    if (!wants['green'] && this.game.pool['green']) {
+      moves.push({kind: 'Laborer', color: 'green'});
+    }
+    if (!wants['yellow'] && this.game.pool['yellow']) {
       moves.push({kind: 'Laborer', color: 'yellow'});
     }
     moves.push({kind: 'Skip'});
@@ -251,12 +275,31 @@ class GameState {
 
   legionary() {
     var moves = [];
-    for (var i = 0; i < this.player.hand.length; i++) {
-      if (!this.player.hand[i].selected) {
-        moves.push({kind: 'Legionary', index: i, data: {card: {color: this.player.hand[i].color}} });
+    var wants = {'yellow': false, 'green': false, 'red': false, 'grey': false, 'blue': false, 'purple': false};
+    // prioritise materials for which the player has an unfinished building
+    for (var i = 0; i < this.player.buildings.length; i++) {
+      if (
+         !this.player.buildings[i].done
+      && !wants[this.player.buildings[i].siteColor] 
+      &&  this.game.pool[this.player.buildings[i].siteColor])
+      {
+        wants[this.player.buildings[i].siteColor] = true;
       }
     }
-    moves.push({kind: 'Skip'});
+    for (var i = 0; i < this.player.hand.length; i++) {
+      if (!this.player.hand[i].selected) {
+        if (wants[this.player.hand[i].color] || this.game.pool[this.player.hand[i].color]) {
+          moves.push({kind: 'Legionary', index: i, data: {card: {color: this.player.hand[i].color}}});
+        }
+      }
+    }
+    for (var i = 0; i < this.player.hand.length; i++) {
+      if (!this.player.hand[i].selected) {
+        if (!wants[this.player.hand[i].color] && !this.game.pool[this.player.hand[i].color]) {
+          moves.push({kind: 'Legionary', index: i, data: {card: {color: this.player.hand[i].color}}});
+        }
+      }
+    }
 
     return moves[0];
   }
