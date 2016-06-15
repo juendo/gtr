@@ -56,7 +56,7 @@ class GameState {
             inf += 3;
           }
         });
-        if (player.vault.length < inf) {
+        if (this.player.vault.length < inf) {
           moves.push({kind: 'Lead', cards: [i], role: 'blue'});
         }
       }
@@ -69,7 +69,7 @@ class GameState {
       else if (this.player.hand[i].color == 'grey') {
         var unfinished = 0;
         this.player.buildings.forEach(function(building) {
-          if (building.done) unfinished++;
+          if (!building.done) unfinished++;
         });
         if (unfinished < 3 || this.player.stockpile.length > 0) {
           moves.push({kind: 'Lead', cards: [i], role: 'grey'});

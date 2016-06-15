@@ -637,7 +637,7 @@ app.controller('gtrController', function($scope, socket, actions) {
     if (shouldPlayNo) no.play();
 
     // apply move if AI opponent moved, only for the player who created the game
-    if (data.move && $scope.meta.you == 0) {
+    if (data.move && $scope.meta.you == 0 && !data.finished) {
       applyMove(data);
     }
   });
