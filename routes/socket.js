@@ -15,7 +15,7 @@ module.exports = function (io) {
           if (gamesList.gamePlayers[data.room]) {
             delete gamesList.gamePlayers[data.room];
           }
-        }, 3000);
+        }, 1000);
       } else {
         socket.broadcast.to(data.room).emit('change', data);
         if (gamesList.gamePlayers[data.room]) {
