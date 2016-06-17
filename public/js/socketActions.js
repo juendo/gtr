@@ -40,7 +40,7 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
       }
       else {
         if (data.game.players[data.currentPlayer].actions[0].kind == 'Rome Demands') {
-          $rootScope.meta.glory = player;
+          $rootScope.meta.glory = data.game.players[data.currentPlayer];
         } else if (data.game.players[data.currentPlayer].actions[0].kind == 'Craftsman') {
           // deselect all cards in players hand following a craftsman for fountain
           data.game.players[data.currentPlayer].hand.forEach(function(card) {
