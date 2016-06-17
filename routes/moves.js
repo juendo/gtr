@@ -1,14 +1,16 @@
 'use strict'
 // want to get all possible legal moves for a player
 class GameState {
-  constructor(game, current) {
+  constructor(data, current) {
     // extract the VISIBLE information
 
     // the current player
+    var game = JSON.parse(JSON.stringify(data.game));
     this.game = game;
     this.player = game.players[current];
     this.deckSize = game.deck.length;
     this.jackNum = game.pool['black'];
+    this.actions = require('../public/js/actions.js');
   }
 
   moveset() {

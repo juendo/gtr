@@ -3,13 +3,13 @@
 // export function for listening to the socket
 module.exports = function (io) {
 
-  var s = function(socket) {
+  return function(socket) {
     socket.on('update', function (data) {
       socket.join(data.room);
       if (data.ai) {
         setTimeout(function() {
           var moves = require('./moves');
-          data.move = moves(data.game, data.currentPlayer);
+          data.move = moves(data, data.currentPlayer);
           socket.emit('change', data);
           socket.broadcast.to(data.room).emit('change', data);
           if (gamesList.gamePlayers[data.room]) {
@@ -71,8 +71,7 @@ module.exports = function (io) {
       socket.join(data.room);
       socket.broadcast.to(data.room).emit('change', data);
     });
-  }
-  return s;
+  };
 };
 
 // object for maintaining the list of active games
