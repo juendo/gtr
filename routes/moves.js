@@ -290,14 +290,14 @@ class GameState {
     }
     for (var i = 0; i < this.player.hand.length; i++) {
       if (!this.player.hand[i].selected) {
-        if (wants[this.player.hand[i].color] || this.game.pool[this.player.hand[i].color]) {
+        if (this.player.hand[i].color != 'black' && (wants[this.player.hand[i].color] || this.game.pool[this.player.hand[i].color])) {
           moves.push({kind: 'Legionary', index: i, data: {card: {color: this.player.hand[i].color}}});
         }
       }
     }
     for (var i = 0; i < this.player.hand.length; i++) {
       if (!this.player.hand[i].selected) {
-        if (!wants[this.player.hand[i].color] && !this.game.pool[this.player.hand[i].color]) {
+        if (this.player.hand[i].color != 'black' && (!wants[this.player.hand[i].color] && !this.game.pool[this.player.hand[i].color])) {
           moves.push({kind: 'Legionary', index: i, data: {card: {color: this.player.hand[i].color}}});
         }
       }
