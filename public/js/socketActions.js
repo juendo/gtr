@@ -38,7 +38,7 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
         actions.useAction(data.game.players[data.currentPlayer], data.game, $rootScope.meta);
         update();
       }
-      else $rootScope.skipAction(game.players[currentPlayer], game, meta);
+      else $rootScope.skipAction(data.game.players[data.currentPlayer], data.game, $rootScope.meta);
     }
   });
 
