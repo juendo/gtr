@@ -1,10 +1,10 @@
 .score-box(
-  ng-if='meta.finished'
+  ng-if='game.finished'
 )
   .score
     | {{ player.winner ? "GLORY TO " + player.name.toUpperCase() : score(player) + " POINTS"}}
   .vault(
-    ng-class='{ "is-current" : player == game.players[meta.currentPlayer] }'
+    ng-class='{ "is-current" : player == game.players[game.currentPlayer] }'
   )
     .stockpile-padding
     .stockpile-center

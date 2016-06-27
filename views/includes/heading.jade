@@ -1,13 +1,13 @@
 .player-title
   .player-header(
     ng-repeat='player in game.players', 
-    style='width:{{100/game.players.length}}%;'
+    style='width:{{100/game.players.length}}%;font-size:{{40/game.players.length > 15 ? 15 : 40/game.players.length}}px;'
   )
     .player-name
         span(style='color:#F7B628')
-            | {{ $index == meta.leader ? 'L ' : '' }}
+            | {{ $index == game.leader ? 'L ' : '' }}
         span(style='color:#AAA')
-            | {{ $index == meta.leader ? '| ' : '' }}
+            | {{ $index == game.leader ? '| ' : '' }}
         span(style='color:#FFF')
             | {{ player.name.toUpperCase() }} 
         span(style='color:#AAA')

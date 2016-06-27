@@ -1,5 +1,5 @@
 button.skip.nudge(
-  ng-if='(!yourTurn()) || meta.finished',
-  ng-click='(!yourTurn() || meta.finished) ? triggerReconnect() : null'
+  ng-if='(!yourTurn()) || game.finished',
+  ng-click='(!yourTurn() || game.finished) ? triggerReconnect() : null'
 )
   | NUDGE

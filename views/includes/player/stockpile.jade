@@ -1,5 +1,5 @@
 .stockpile(
-  ng-class='{ "is-current" : player == game.players[meta.currentPlayer] }'
+  ng-class='{ "is-current" : player == game.players[game.currentPlayer] }'
 )
   .stockpile-padding
   .stockpile-center
@@ -12,7 +12,7 @@
       ng-repeat-start='material in player.stockpile track by $index',
       ng-drag='$parent.$parent.$index == meta.you',
       ng-drag-data='{index: $index, material: material}', 
-      ng-click='yourTurn() && $parent.$parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game, meta) : null', 
+      ng-click='yourTurn() && $parent.$parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game) : null', 
       ng-style='{ "background-color" : "#" + colors[material], "width" : 83.333333 / player.stockpile.length + "%" }'
     )
     .stockpile-spacing.end(

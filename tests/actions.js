@@ -20,7 +20,6 @@ describe('gtr', function () {
       expect(actions.influence).toBeDefined();
       expect(actions.romeDemands).toBeDefined();
       expect(actions.legionary).toBeDefined();
-      expect(actions.selectCard).toBeDefined();
       expect(actions.lead).toBeDefined();
       expect(actions.follow).toBeDefined();
       expect(actions.layFoundation).toBeDefined();
@@ -121,16 +120,16 @@ describe('gtr', function () {
       var game;
       beforeEach(function() {
         player = {name:"",buildings:[{name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:1, siteColor: 'red'}],hand:[{name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:3, siteColor: 'red'}],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
-        game = {sites: {'red':6}, players: [player, {}]};
+        game = {sites: {'red':6}, players: [player, {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]}], currentPlayer: 0, leader: 0};
       });
       it('should append to buildings', function() {
         data = {index: 0, color: 'red', card: {name: 'Academy', color: 'red', done: false, materials: [], selected: false, copy:2, siteColor: 'red'}};
-        actions.layFoundation(player, game, {}, data, {});
+        actions.layFoundation(player, game, data, {});
         expect(player.buildings.length).toBe(2);
       });
       it('shouldnt allow multiple buildings with the same name', function() {
         data = {index: 0, card: {name: 'Shrine', color: 'red', done: false, materials: [], selected: false, copy:2, siteColor: 'red'}};
-        expect(actions.layFoundation(player, game, {}, data, {})).toBe(false);
+        expect(actions.layFoundation(player, game, data, {})).toBe(false);
       });
     });
     
@@ -227,33 +226,34 @@ describe('gtr', function () {
         player.buildings.push(prison);
         var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         opp.buildings.push(foundry);
-        expect(actions.prison(player, foundry, opp, 0)).toBe(true);
+        actions.prison(player, foundry, opp, 0, {players: [player, opp], currentPlayer: 0, leader: 0});
+        expect(opp.buildings.length).toBe(0);
       });
       it('prison should return false for incomplete building stolen', function() {
         player.buildings.push(prison);
         var foundry = {name: 'Foundry', color: 'red', done: false, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         opp.buildings.push(foundry);
-        expect(actions.prison(player, foundry, opp, 0)).toBe(false);
+        expect(actions.prison(player, foundry, opp, 0, {players: [player, opp], currentPlayer: 0, leader: 0})).toBe(false);
       });
       it('prison should add complete building to players buildings', function() {
         player.buildings.push(prison);
         var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         opp.buildings.push(foundry);
-        actions.prison(player, foundry, opp, 0);
+        actions.prison(player, foundry, opp, 0, {players: [player, opp], currentPlayer: 0, leader: 0});
         expect(player.buildings[1]).toBe(foundry);
       });
       it('prison should remove opponents building', function() {
         player.buildings.push(prison);
         var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         opp.buildings.push(foundry);
-        actions.prison(player, foundry, opp, 0);
+        actions.prison(player, foundry, opp, 0, {players: [player, opp], currentPlayer: 0, leader: 0});
         expect(opp.buildings.length).toBe(0);
       });
       it('prison should add three actions.influence to opponent and not rid them of the actions.influence from the stolen building', function() {
         player.buildings.push(prison);
         var foundry = {name: 'Foundry', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         opp.buildings.push(foundry);
-        actions.prison(player, foundry, opp, 0);
+        actions.prison(player, foundry, opp, 0,{players: [player, opp], currentPlayer: 0, leader: 0});
         expect(actions.influence(opp)).toBe(7);
       });
     });
@@ -293,7 +293,7 @@ describe('gtr', function () {
       it('should add think to end of a players actions if they have an academy when they perform a craftsman to lay a foundation', function() {
         player.buildings.push(academy);
         var data = {index: 0, color: 'red', card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'}};
-        actions.layFoundation(player, game, {}, data, {kind:'Craftsman'});
+        actions.layFoundation(player, game, data, {kind:'Craftsman'});
         expect(player.actions[player.actions.length - 1].kind).toBe('Think');
       });
       it('shouldnt add think to end of a players actions if they dont have an academy when they perform a craftsman to lay a foundation', function() {
@@ -334,7 +334,7 @@ describe('gtr', function () {
         actions.fillStructureFromHand(shrine, player, data, {}, {}, {}, {});
         var actionsCount = player.actions.length;
         data = {index: 0, card:{name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:2, siteColor: 'red'}};
-        actions.fillStructureFromHand(shrine, player, data, {}, {}, {}, {});
+        actions.fillStructureFromHand(shrine, player, data, {players: [player], currentPlayer: 0, leader: 0}, {});
         expect(player.actions.length).toBe(actionsCount);
       });
       it('should add think to end of a players actions if they have just completed an academy with a craftsman', function() {
@@ -354,16 +354,19 @@ describe('gtr', function () {
       beforeEach(function() {
         pool = {'yellow':5};
         player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
-        action = {kind: 'actions.Patron'};
+        action = {kind: 'Patron'};
         aqueduct = {name: 'Aqueduct', color: 'grey', done: true, materials: [], selected: false, copy:2, siteColor: 'grey'};
+        player.actions.push(action);
       });
       it('with aqueduct shouldnt imediately spend the action when you take a client from the pool', function() {
         player.buildings.push(aqueduct);
-        expect(actions.patron(player, 'yellow', pool, null, action)).toBe(false);
+        actions.patron(player, 'yellow', pool, null, action, {})
+        expect(player.actions.length).toBe(1);
         expect(player.clientele.length).toBe(1);
       });
       it('should imediately spend the action when you take a client from the pool and dont have aqueduct', function() {
-        expect(actions.patron(player, 'yellow', pool, null, action)).toBe(true);
+        actions.patron(player, 'yellow', pool, null, action, {players: [player], currentPlayer: 0, leader: 0});
+        expect(player.actions[0].kind).toBe("Lead");
         expect(player.clientele.length).toBe(1);
       });
       it('shouldnt take a client from hand when you dont have aqueduct', function() {
@@ -375,20 +378,23 @@ describe('gtr', function () {
       it('with aqueduct should spend the action if you take from pool after taking from hand', function() {
         player.buildings.push(aqueduct);
         action.takenFromHand = true;
-        expect(actions.patron(player, 'yellow', pool, null, action)).toBe(true);
+        actions.patron(player, 'yellow', pool, null, action, {players: [player], currentPlayer: 0, leader: 0});
+        expect(player.actions[0].kind).toBe("Lead");
       });
       it('with aqueduct shouldnt immediately spend the action if you take from hand', function() {
         player.buildings.push(aqueduct);
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
-        expect(actions.patron(player, 'yellow', null, {index: 0, card: gate}, action)).toBe(false);
+        actions.patron(player, 'yellow', null, {index: 0, card: gate}, action, {});
+        expect(player.actions.length).toBe(1);
       });
       it('with aqueduct should spend the action if you take from hand after taking from pool', function() {
         player.buildings.push(aqueduct);
         action.takenFromPool = true;
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
-        expect(actions.patron(player, null, null, {index: 0, card: gate}, action)).toBe(true);
+        actions.patron(player, null, null, {index: 0, card: gate}, action, {players: [player], currentPlayer: 0, leader: 0})
+        expect(player.actions[0].kind).toBe("Lead");
       });
       it('with aqueduct shouldnt take a client from pool if you already have', function() {
         player.buildings.push(aqueduct);
@@ -407,8 +413,9 @@ describe('gtr', function () {
       it('should add action for client when hired with bath', function() {
         var bath = {name: 'Bath', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.buildings.push(bath);
-        var used = actions.patron(player, 'yellow', pool, null, action);
-        expect(used).toBe(false);
+        var game = {};
+        var used = actions.patron(player, 'yellow', pool, null, action, game);
+        expect(used).toBe(game);
         expect(player.actions[0].kind).toBe('Laborer');
       });
       it('should add action for client when hired from hand with aqueduct and bath', function() {
@@ -417,7 +424,8 @@ describe('gtr', function () {
         player.buildings.push(aqueduct);
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
-        expect(actions.patron(player, null, null, {index: 0, card: gate}, action)).toBe(false);
+        actions.patron(player, null, null, {index: 0, card: gate}, action, {});
+        expect(player.actions.length).toBe(2);
         expect(player.actions[0].kind).toBe('Legionary');
       });
     });
@@ -456,44 +464,52 @@ describe('gtr', function () {
       var dock;
       var pool;
       var action;
+      var game;
       beforeEach(function() {
         pool = {'yellow':5};
         player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
-        action = {kind: 'actions.Laborer'};
+        action = {kind: 'Laborer'};
+        player.actions.push(action);
         dock = {name: 'Dock', color: 'green', done: true, materials: [], selected: false, copy:2, siteColor: 'green'};
+        game = {players:[player], currentPlayer: 0, leader: 0};
       });
       it('should immediately spend action when you dont have a dock', function() {
-        expect(actions.laborer(player, 'yellow', pool, null, action)).toBe(true);
+        actions.laborer(player, 'yellow', pool, null, action, game);
+        expect(player.actions[0].kind).toBe("Lead");
         expect(player.stockpile.length).toBe(1);
       });
       it('shouldnt immediately spend action when you have a dock', function() {
         player.buildings.push(dock);
-        expect(actions.laborer(player, 'yellow', pool, null, action)).toBe(false);
+        actions.laborer(player, 'yellow', pool, null, action, game);
+        expect(player.actions[0]).toBe(action);
         expect(player.stockpile.length).toBe(1);
       });
       it('shouldnt take a material from hand when you dont have dock', function() {
         action.takenFromPool = true;
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
-        expect(actions.laborer(player, null, null, {index: 0, card: gate}, action)).toBe(false);
+        expect(actions.laborer(player, null, null, {index: 0, card: gate}, action, game)).toBe(false);
       });
       it('with dock should spend the action if you take from pool after taking from hand', function() {
         player.buildings.push(dock);
         action.takenFromHand = true;
-        expect(actions.laborer(player, 'yellow', pool, null, action)).toBe(true);
+        actions.laborer(player, 'yellow', pool, null, action, game);
+        expect(player.actions[0].kind).toBe("Lead");
       });
       it('with dock shouldnt immediately spend the action if you take from hand', function() {
         player.buildings.push(dock);
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
-        expect(actions.laborer(player, 'yellow', null, {index: 0, card: gate}, action)).toBe(false);
+        actions.laborer(player, 'yellow', null, {index: 0, card: gate}, action, game);
+        expect(player.actions[0]).toBe(action);
       });
       it('with dock should spend the action if you take from hand after taking from pool', function() {
         player.buildings.push(dock);
         action.takenFromPool = true;
         var gate = {name: 'Gate', color: 'red', done: true, materials: ['red', 'red'], selected: false, copy:1, siteColor: 'red'};
         player.hand.push(gate);
-        expect(actions.laborer(player, null, null, {index: 0, card: gate}, action)).toBe(true);
+        actions.laborer(player, null, null, {index: 0, card: gate}, action, game);
+        expect(player.actions[0].kind).toBe("Lead");
       });
       it('with dock shouldnt take a client from pool if you already have', function() {
         player.buildings.push(dock);
@@ -521,7 +537,7 @@ describe('gtr', function () {
       var deck;
       beforeEach(function() {
         player = {name:"",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
-        action = {kind: 'actions.Merchant'};
+        action = {kind: 'Merchant'};
         basilica = {name: 'Basilica', color: 'blue', done: true, materials: [], selected: false, copy:2, siteColor: 'blue'};
         player.stockpile.push('yellow');
         materialData = {index: 0, material: 'yellow'};
@@ -532,12 +548,15 @@ describe('gtr', function () {
         deck = [gate];
       });
       it('should immediately spend action when you dont have a basilica', function() {
-        expect(actions.merchant(player, materialData, action)).toBe(true);
+        actions.merchant(player, materialData, action, {players: [player], currentPlayer: 0, leader: 0});
+        expect(player.actions[0].kind).toBe("Lead");
         expect(player.vault.length).toBe(1);
       });
       it('shouldnt immediately spend action when you have a basilica', function() {
         player.buildings.push(basilica);
-        expect(actions.merchant(player, materialData, action)).toBe(false);
+        player.actions.push(action);
+        actions.merchant(player, materialData, action, {players: [player], currentPlayer: 0, leader: 0})
+        expect(player.actions[0]).toBe(action);
         expect(player.vault.length).toBe(1);
       });
       it('shouldnt take a material from hand when you dont have basilica', function() {
@@ -547,16 +566,20 @@ describe('gtr', function () {
       it('with basilica should spend the action if you take from stockpile after taking from hand', function() {
         player.buildings.push(basilica);
         action.takenFromHand = true;
-        expect(actions.merchant(player, materialData, action)).toBe(true);
+        actions.merchant(player, materialData, action, {players: [player], currentPlayer: 0, leader: 0});
+        expect(player.actions[0].kind).toBe("Lead");
       });
       it('with basilica shouldnt immediately spend the action if you take from hand', function() {
         player.buildings.push(basilica);
-        expect(actions.merchant(player, handData, action)).toBe(false);
+        player.actions.push(action);
+        actions.merchant(player, handData, action, {players: [player], currentPlayer: 0, leader: 0});
+        expect(player.actions[0]).toBe(action);
       });
       it('with basilica should spend the action if you take from hand after taking from stockpile', function() {
         player.buildings.push(basilica);
         action.takenFromStockpile = true;
-        expect(actions.merchant(player, handData, action)).toBe(true);
+        actions.merchant(player, handData, action, {players: [player], currentPlayer: 0, leader: 0});
+        expect(player.actions[0].kind).toBe("Lead");
       });
       it('with basilica shouldnt take a material from stockpile if you already have', function() {
         player.buildings.push(basilica);
@@ -572,22 +595,23 @@ describe('gtr', function () {
       });
       it('with atrium should take a material from deck', function() {
         player.buildings.push(atrium);
-        expect(actions.merchant(player, {deck: deck, meta: {}}, action)).toBe(true);
+        actions.merchant(player, {deck: deck, game: {}}, action, {players: [player], currentPlayer: 0, leader: 0});
+        expect(player.actions[0].kind).toBe("Lead");
         expect(player.vault.length).toBe(1);
       });
       it('without atrium shouldnt take a material from deck', function() {
-        expect(actions.merchant(player, {deck: deck, meta: {}}, action)).toBe(false);
+        expect(actions.merchant(player, {deck: deck, game: {}}, action)).toBe(false);
         expect(player.vault.length).toBe(0);
       });
       it('with atrium shouldnt take a material from deck if already have taken from deck/stockpile', function() {
         player.buildings.push(atrium);
         action.takenFromStockpile = true;
-        expect(actions.merchant(player, {deck: deck, meta: {}}, action)).toBe(false);
+        expect(actions.merchant(player, {deck: deck, game: {}}, action)).toBe(false);
         expect(player.vault.length).toBe(0);
       });
       it('with atrium taking from deck should set actions taken from stockpile to true', function() {
         player.buildings.push(atrium);
-        actions.merchant(player, {deck: deck, meta: {}}, action)
+        actions.merchant(player, {deck: deck, game: {}}, action, {players: [player], currentPlayer: 0, leader: 0});
         expect(action.takenFromStockpile).toBe(true);
       });
     });
@@ -689,7 +713,7 @@ describe('gtr', function () {
       });
       it('should return true when a player has a vomitorium', function() {
         player.buildings.push(vomitorium);
-        expect(actions.vomitorium(player, pool)).toBe(true);
+        expect(actions.vomitorium(player, pool, {})).toBeTruthy();
       });
       it('should get rid of players hand when used', function() {
         player.buildings.push(vomitorium);
@@ -717,7 +741,7 @@ describe('gtr', function () {
         player = {name:"",buildings:[],hand:[latrine],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
         stairway = {name: 'Stairway', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'purple'};
         latrine = {name: 'Latrine', color: 'yellow', done: true, materials: [], selected: false, copy:2, siteColor: 'yellow'};
-        game = {sites: {'red':6}, players: [player, {}]};
+        game = {sites: {'red':6}, players: [player, {hand:[]}], currentPlayer: 0, leader: 0};
         game.players = [player];
         palace = {name: 'Palace', color: 'purple', done: true, materials: [], selected: false, copy:2, siteColor: 'purple'};
       });
@@ -767,21 +791,24 @@ describe('gtr', function () {
         unfinishedPalace.done = false;
         var action = {kind:'Architect'};
         // filling their own finished palace does nothing
-        expect(actions.fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
+        expect(actions.fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, game, action)).toBe(false);
         expect(action.usedRegularArchitect).toBeFalsy();
         expect(action.usedStairway).toBeFalsy();
         // filling another players unfinished palace does nothing
-        expect(actions.fillStructureFromStockpile(unfinishedPalace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
+        expect(actions.fillStructureFromStockpile(unfinishedPalace, player, {index:0, material: 'purple'}, game, action)).toBe(false);
         expect(action.usedRegularArchitect).toBeFalsy();
         expect(action.usedStairway).toBeFalsy();
         // filling their own unfinished palace does something
         palace.done = false;
-        expect(actions.fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(false);
+        actions.fillStructureFromStockpile(palace, player, {index:0, material: 'purple'}, game, action);
+        player.actions.push(action);
+        expect(player.actions.length).toBe(1);
         expect(action.usedRegularArchitect).toBe(true);
         expect(action.usedStairway).toBeFalsy();
         // filling opponents finished structure does something
         unfinishedPalace.done = true;
-        expect(actions.fillStructureFromStockpile(unfinishedPalace, player, {index:0, material: 'purple'}, {}, game, action)).toBe(true);
+        actions.fillStructureFromStockpile(unfinishedPalace, player, {index:0, material: 'purple'}, game, action)
+        expect(player.actions[0].kind).toBe("Lead");
         expect(action.usedRegularArchitect).toBe(true);
         expect(action.usedStairway).toBe(true);
       });
@@ -797,7 +824,7 @@ describe('gtr', function () {
         player1 = {name:"Neil",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
         player2 = {name:"Noil",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
         player3 = {name:"Niall",buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]};
-        game = {players: [player1, player2, player3]};
+        game = {players: [player1, player2, player3], finished: true};
         meta = {finished: true};
       });
       it('should give 2 each for players with nothing', function() {

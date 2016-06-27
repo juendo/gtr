@@ -1,6 +1,6 @@
 .player-box(
   ng-repeat='player in game.players',
-  ng-class='{ "is-you" : player == you(), "is-current" : player == game.players[meta.currentPlayer] }',
+  ng-class='{ "is-you" : player == you(), "is-current" : player == game.players[game.currentPlayer] }',
   ng-style='{"width": 100 / game.players.length + "%"}'
 )
   include ./player/gtr.jade

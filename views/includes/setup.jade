@@ -1,11 +1,11 @@
 .row(
-  ng-if='meta.created'
+  ng-if='game.created'
 )
   .Absolute-Center.is-Responsive
     .col-sm-12.col-md-10.col-md-offset-1
       .form-group
         .access-code
-          | {{ meta.room }}
+          | {{ game.room }}
       .form-group
         div(
           ng-repeat='player in game.players'
@@ -14,13 +14,13 @@
       .form-group.game-button
         button.btn.btn-def.btn-block(
           type='button', 
-          ng-click='start(meta, game)'
+          ng-click='start(game)'
         )
           | Start Game
       .form-group.game-button
         button.btn.btn-def.btn-block(
           type='button', 
-          ng-click='addAI(meta, game)'
+          ng-click='addAI(game)'
         )
           | Add AI
       .form-group.game-button

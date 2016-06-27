@@ -1,5 +1,5 @@
 .row(
-  ng-if='!meta.created'
+  ng-if='!game.created'
 )
   .Absolute-Center.is-Responsive
     .col-sm-12.col-md-10.col-md-offset-1
@@ -13,12 +13,12 @@
             type='text', 
             name='name', 
             placeholder='Enter your name',
-            ng-model='meta.name'
+            ng-model='game.name'
           )
         .form-group
           button.btn.btn-def.btn-block#create(
             type='button',
-            ng-click='createGame(meta, game.players[meta.you])'
+            ng-click='createGame(game, game.players[meta.you])'
           ) 
             | Create
         .form-group
@@ -29,19 +29,19 @@
             type='text', 
             name='name',
             placeholder='Enter access code',
-            ng-model='meta.room'
+            ng-model='game.room'
           )
         .form-group
           input.form-control#join-name(
             type='text',
             name='name', 
             placeholder='Enter your name',
-            ng-model='meta.name'
+            ng-model='game.name'
           )
         .form-group
           button.btn.btn-def.btn-block#join(
             type='button'
-            ng-click='joinGame(meta)'
+            ng-click='joinGame(game)'
           ) Join
         .form-group
           button.btn.btn-def.btn-block.back(type='button') Back

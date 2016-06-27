@@ -33,7 +33,6 @@ angular.module('GTR').factory('styling', function($rootScope) {
       'Think' : 'FFF',
       'Prison' : 'FFF',
       'Sewer' : 'FFF',
-      'Statue' : 'FFF'
     }
   $rootScope.actionBorderColors = 
     { 'Lead' : '222',

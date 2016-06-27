@@ -9,145 +9,110 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
 
 
   // called when a card in your hand is clicked
-  $scope.handClicked = function(player, game, meta, data) {
+  $scope.handClicked = function(player, game, data) {
 
     var action = player.actions[0];
-    var acted = false;
+    var move;
 
     if (isDragging) isDragging = false;
 
-    else 
-    {
-      if (
-          action == undefined) 
-      {
+    else {
+      if (action == undefined) {
         return;
       } 
-      else if (
-          action.kind == 'Rome Demands' 
-      &&  data.card.name != 'Jack') 
-      {
-        acted = actions.romeDemands(player, game, meta, data, action);
-      } 
-      else if (
-          action.kind == 'Legionary' 
-      &&  data.card.name != 'Jack') 
-      {
-        acted = actions.legionary(player, game, meta, data, action);
-      } 
-      else if (
-          action.kind == 'Lead' 
-      ||  action.kind == 'Follow') 
-      {
-        acted = actions.selectCard(player, game, meta, data, action);
+      else if (action.kind == 'Rome Demands' && data.card.name != 'Jack') move = {kind: 'Rome Demands', data: data};
+      else if (action.kind == 'Legionary' && data.card.name != 'Jack') move = {kind: 'Legionary', index: data.index, data: data};
+      else if (action.kind == 'Patron' && data.card.name != 'Jack') move = {kind: 'Aqueduct', data: data};
+      else if (action.kind == 'Laborer' && data.card.name != 'Jack') move = {kind: 'Dock', data: data};
+      else if (action.kind == 'Merchant' && data.card.name != 'Jack') move = {kind: 'Basilica', data: data};
+
+      else if (action.kind == 'Lead' || action.kind == 'Follow') {
+        data.card.selected = !data.card.selected;
       }
-      else if (
-          action.kind == 'Patron' 
-      &&  data.card.name != 'Jack') 
-      {
-        acted = actions.patron(player, null, null, data, action);
+      else if ((action.kind == 'Craftsman' || action.kind == 'Architect') && data.card.name != 'Jack') {
+        if (data.card.selected && !action.usedFountain) {
+          data.card.selected = false;
+        } else if (!action.usedFountain) {
+          player.hand.forEach(function(card) {
+            card.selected = false;
+          });
+          data.card.selected = true;
+        }
       }
-      else if (
-          action.kind == 'Laborer' 
-      &&  data.card.name != 'Jack') 
-      {
-        acted = actions.laborer(player, null, null, data, action);
-      }
-      else if (
-          action.kind == 'Merchant' 
-      &&  data.card.name != 'Jack') 
-      {
-        acted = actions.merchant(player, data, action);
-      }
-      else if (
-           (
-                action.kind == 'Craftsman'
-            ||  action.kind == 'Architect')
-        &&  data.card.name != 'Jack') {
-        acted = actions.singleSelect(player, game, meta, data, action);
-      }
-      if (acted) {
-        actions.useAction(player, game, meta);
+
+      if (move && actions.applyMove(move, game)) {
+      
         update();
       }
-      if (actions.checkIfGameOver(game, meta)) update();
+      if (actions.checkIfGameOver(game)) update();
     }   
   }
 
   // called when the deck is clicked (and you are the current player)
-  $scope.deckClicked = function(player, game, meta) {
+  $scope.deckClicked = function(player, game) {
 
     var action = player.actions[0];
-    var acted = false;
+    var move;
+
+    if (action && (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) move = {kind: 'Refill'};
+    else if (action.kind == 'Merchant') move = {kind: 'Atrium'};
+    else if (action.kind == 'Patron') move = {kind: 'Bar'};
+    else if (action.kind == 'Craftsman') move = {kind: 'Fountain'};
+
+    if (move && actions.applyMove(move, game)) {
+    
+      update();
+    }
+    if (actions.checkIfGameOver(game)) update();
+  }
+
+  $scope.drawOne = function(player, game) {
+    var action = player.actions[0];
+    var move;
 
     if (action != undefined && 
           (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.think(player, game, meta);
-    }
-    else if (action.kind == 'Merchant') {
-      acted = actions.merchant(player, {deck: game.deck, meta: meta}, action);
-    }
-    else if (action.kind == 'Patron') {
-      acted = actions.patron(player, null, null, {deck: game.deck, meta: meta}, action);
-    }
-    else if (action.kind == 'Craftsman') {
-      acted = actions.fountain(player, game.deck, meta, action);
+      move = {kind: 'Draw One'};
     }
 
-    if (acted) {
-      actions.useAction(player, game, meta);
+    if (move && actions.applyMove(move, game)) {
+    
       update();
     }
-    if (actions.checkIfGameOver(game, meta)) update();
+    if (actions.checkIfGameOver(game)) update();
   }
 
-  $scope.drawOne = function(player, game, meta) {
-    var action = player.actions[0];
-    var acted = false;
-
-    if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.drawOne(player, game, meta);
-    }
-
-    if (acted) {
-      actions.useAction(player, game, meta);
-      update();
-    }
-    if (actions.checkIfGameOver(game, meta)) update();
-  }
-
-  $scope.skipAction = function(player, game, meta) {
+  $scope.skipAction = function(player, game) {
     if (player.actions[0].kind == 'Rome Demands') {
-      meta.glory = player;
+      game.glory = player;
     } else if (player.actions[0].kind == 'Craftsman') {
       // deselect all cards in players hand following a craftsman for fountain
       player.hand.forEach(function(card) {
         card.selected = false;
       }, this);
     }
-    actions.useAction(player, game, meta);
+    actions.applyMove({kind: 'Skip'}, game);
     update();
   }
 
-  $scope.jackClicked = function(player, game, meta) {
+  $scope.jackClicked = function(player, game) {
     var action = player.actions[0];
-    var acted = false;
+    var move;
 
     if (action != undefined && 
           (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
-      acted = actions.takeJack(player, game, meta);
+      move = {kind: 'Take Jack'};
     }
 
-    if (acted) {
-      actions.useAction(player, game, meta);
+    if (move && actions.applyMove(move, game)) {
+    
       update();
     }
-    if (actions.checkIfGameOver(game, meta)) update();
+    if (actions.checkIfGameOver(game)) update();
   }
 
   // called when a drag ends over a structure
-  $scope.dragEnded = function(player, data, evt, structure, game, meta) {
+  $scope.dragEnded = function(player, data, evt, structure, game, index) {
 
     var action = player.actions[0];
     var acted = false;
@@ -160,110 +125,116 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
       return;
     }
     if (data.card && action.kind == 'Craftsman') {
-      acted = actions.fillStructureFromHand(structure, player, data, meta, game, action);
+      move = {kind: 'Fill from Hand', building: index, data: data};
     } 
     else if (data.material && action.kind == 'Architect') {
-      acted = actions.fillStructureFromStockpile(structure, player, data, meta, game, action);
+      move = {kind: 'Fill from Stockpile', building: index, data: data};
     }
     else if (data.color && action.kind == 'Architect') {
-      acted = actions.fillStructureFromPool(structure, player, data.color, meta, game, action);
+      move = {kind: 'Fill from Pool', building: index, color: data.color};
     }
-    if (acted) {
-      actions.useAction(player, game, meta);
+    if (move && actions.applyMove(move, game)) {
+    
       update();
     }
-    if (actions.checkIfGameOver(game, meta)) update();
+    if (actions.checkIfGameOver(game)) update();
   }
 
   // called when a space in the pool is clicked
-  $scope.poolClicked = function(player, color, game, meta) {
+  $scope.poolClicked = function(player, color, game) {
 
     var action = player.actions[0];
-    var acted = false;
+    var move;
+
+    var cards = [];
+    for (var i = 0; i < player.hand.length; i++) {
+      if (player.hand[i].selected) {
+        cards.push(i);
+      }
+    }
 
     if (action == undefined || 
         (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Statue' && action.kind != 'Craftsman' && action.kind != 'Architect')) {
       return;
     } 
     else if (action.kind == 'Lead') {
-      acted = actions.lead(player, game, meta, {card:{name: '', color: color}}, action);
+      move = {kind: 'Lead', cards: cards, role: color};
     }
     else if (action.kind == 'Patron') {
-      acted = actions.patron(player, color, game.pool, null, action);
+      move = {kind: 'Patron', color: color};
     } 
     else if (action.kind == 'Laborer') {
-      acted = actions.laborer(player, color, game.pool, null, action);
+      move = {kind: 'Laborer', color: color};
     } 
     else if (action.kind == 'Follow') {
-      acted = actions.follow(player, game, meta, {card:{name: '', color: color}}, action);
+      move = {kind: 'Follow', cards: cards};
     }
-    else if (action.kind == 'Statue') {
-      acted = actions.statue(player, color, game, meta, action);
-    }
-    else if (action.kind == 'Craftsman' || action.kind == 'Architect') {
-      acted = actions.prepareToLay(player, color, game, meta, action);
+    else if (cards.length === 1 && (action.kind == 'Craftsman' || action.kind == 'Architect')) {
+      move = {kind: 'Lay', index: cards[0], color: color};
     }
 
-    if (acted) {
-      actions.useAction(player, game, meta);
+    if (move && actions.applyMove(move, game)) {
+    
       update();
     }
-    if (actions.checkIfGameOver(game, meta)) update();
+    if (actions.checkIfGameOver(game)) update();
   }
 
   // called when a material in your stockpile is clicked
-  $scope.stockpileClicked = function(player, data, game, meta) {
+  $scope.stockpileClicked = function(player, data, game) {
 
     var action = player.actions[0];
-    var acted = false;
+    var move;
 
     if (action != undefined && action.kind == 'Merchant') {
-      acted = actions.merchant(player, data, action);
+      move = {kind: 'Merchant', data: data};
     }
 
-    if (acted) {
-      actions.useAction(player, game, meta);
+    if (move && actions.applyMove(move, game)) {
+    
       update();
     }
-    if (actions.checkIfGameOver(game, meta)) update();
+    if (actions.checkIfGameOver(game)) update();
   }
 
-  $scope.pendingClicked = function(player, data, game, meta) {
+  $scope.pendingClicked = function(player, data, game) {
 
     var action = player.actions[0];
-    var acted = false;
+    var move;
 
     if (action != undefined && action.kind == 'Sewer') {
-      acted = actions.sewer(player, data);
+      move = {kind: 'Sewer', data: data};
     }
 
-    if (acted) {
-      actions.useAction(player, game, meta);
+    if (move && actions.applyMove(move, game)) {
+    
       update();
     }
-    if (actions.checkIfGameOver(game, meta)) update();
+    if (actions.checkIfGameOver(game)) update();
   }
 
   $scope.vomitorium = function(player, pool) {
     var action = player.actions[0];
+    var move;
     if (action != undefined 
       && (action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow')) {
-      actions.vomitorium(player, pool);
+      move = {kind: 'Vomitorium'};
     }
+    if (move) actions.applyMove(move, game);
   }
 
-  $scope.prison = function(player, building, opponent, index, game, meta) {
+  $scope.prison = function(player, building, opponent, index, game) {
     var action = player.actions[0];
-    var acted = false;
+    var move;
     if (action != undefined
       && action.kind == 'Prison') {
-      acted = actions.prison(player, building, opponent, index);
+      move = {kind: 'Prison', building: building, opponent: opponent, index: index};
     }
-    if (acted) {
-      actions.useAction(player, game, meta);
+    if (move && actions.applyMove(move, game)) {
+    
       update();
     }
-    if (actions.checkIfGameOver(game, meta)) update();
+    if (actions.checkIfGameOver(game)) update();
   }
 
   $scope.canSkipCurrentAction = function(player, game) {
@@ -288,7 +259,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
   }
 
   $scope.yourTurn = function() {
-    return $scope.meta.currentPlayer == $scope.meta.you && !$scope.meta.finished;
+    return $scope.game.currentPlayer == $scope.meta.you && !$scope.game.finished;
   }
 
   $scope.you = function() {
@@ -297,24 +268,24 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
   // GAME STATE functions ------------------------------------------------------------------------------------
 
   // when create game button is pressed
-  $scope.createGame = function(meta, player) {
-    if (meta.name.length > 0 && meta.name.length < 15) {
+  $scope.createGame = function(game, player) {
+    if (game.name.length > 0 && game.name.length < 15) {
       // broadcast to the socket that we want to create a game
-      socket.emit('create', meta.name);
-      player.name = meta.name;
-      meta.created = true;
+      socket.emit('create', game.name);
+      player.name = game.name;
+      game.created = true;
     }
   };
 
   // when join game button is pressed
   $scope.joinGame = function(meta) {
-    socket.emit('join', {room: meta.room, name: meta.name});
+    socket.emit('join', {room: game.room, name: game.name});
   }
 
   // when start game is pressed
-  $scope.start = function(meta, game) {
+  $scope.start = function(game) {
     if (game.players.length < 2) return;
-    meta.started = true;
+    game.started = true;
     for (var i = 0; i < game.players.length; i++) {
       game.pool[game.deck.pop().color]++;
       while (game.players[i].hand.length < 4) {
@@ -323,25 +294,20 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
       game.players[i].hand.push({name: 'Jack', color: 'black'});
       game.pool['black']--;
     }
-    meta.leader = Math.floor(Math.random() * (game.players.length));
-    meta.currentPlayer = meta.leader;
-    game.players[meta.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
+    game.leader = Math.floor(Math.random() * (game.players.length));
+    game.currentPlayer = game.leader;
+    game.players[game.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
     update();
   }
 
-  $scope.addAI = function(meta, game) {
-    socket.emit('add ai', {room: meta.room});
+  $scope.addAI = function(game) {
+    socket.emit('add ai', {room: game.room});
   }
 
   $scope.triggerReconnect = function() {
     console.log('triggered reconnect');
     socket.emit('reconnection', {
-      game: $scope.game,
-      leader: $scope.meta.leader,
-      turn: $scope.meta.turn,
-      currentPlayer: $scope.meta.currentPlayer,
-      room: $scope.meta.room,
-      finished: $scope.meta.finished
+      game: $scope.game
     });
   };
 
@@ -356,15 +322,15 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
 
     // reset all glory to rome animation statuses
     $scope.game.players.forEach(function(player) {
-      if (!$scope.meta.glory || player != $scope.meta.glory) {
+      if (!$scope.game.glory || player != $scope.game.glory) {
         player.glory1 = false;
         player.glory2 = false;
       }
     });
 
     // if the player pressed glory to rome
-    if ($scope.meta.glory) {
-      var player = $scope.meta.glory;
+    if ($scope.game.glory) {
+      var player = $scope.game.glory;
       // trigger glory to rome animation
       if (player.glory1) {
         player.glory1 = false;
@@ -373,16 +339,11 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
         player.glory1 = true;
         player.glory2 = false;
       }
-      $scope.meta.glory = null;
+      $scope.game.glory = null;
     }
     socket.emit('update', {
       game: $scope.game,
-      leader: $scope.meta.leader,
-      turn: ++$scope.meta.turn,
-      currentPlayer: $scope.meta.currentPlayer,
-      room: $scope.meta.room,
-      finished: $scope.meta.finished,
-      ai: $scope.game.players[$scope.meta.currentPlayer].ai
+      ai: $scope.game.players[$scope.game.currentPlayer].ai
     });
   }
 })

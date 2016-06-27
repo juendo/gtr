@@ -6,22 +6,18 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
 
   // message received indicating that another player has acted
   socket.on('change', function (data) {
-    if (data.turn < $rootScope.meta.turn) return update();
-    if (data.turn == $rootScope.meta.turn && data.turn > 1 && !data.move) {
-      if ($rootScope.meta.currentPlayer == $rootScope.meta.you) {
+    if (data.game.turn < $rootScope.game.turn) return update();
+    if (data.game.turn == $rootScope.game.turn && data.game.turn > 1 && !data.move) {
+      if ($rootScope.game.currentPlayer == $rootScope.meta.you) {
         ding.play();
       }
       return;
     };
-    $rootScope.meta.started = true;
+    $rootScope.game.started = true;
     $rootScope.game = data.game;
-    $rootScope.meta.turn = data.turn;
-    $rootScope.meta.leader = data.leader;
-    $rootScope.meta.currentPlayer = data.currentPlayer;
-    $rootScope.meta.finished = data.finished;
 
     // play sound effects
-    if ($rootScope.meta.currentPlayer == $rootScope.meta.you) {
+    if ($rootScope.game.currentPlayer == $rootScope.meta.you) {
       ding.play();
     }
     var shouldPlayNo = false;
@@ -33,21 +29,21 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
     if (shouldPlayNo) no.play();
 
     // apply move if AI opponent moved, only for the player who created the game
-    if (data.move && $rootScope.meta.you == 0 && !data.finished) {
-      if (actions.applyMove(data.move, data.game, $rootScope.meta)) {
-        actions.useAction(data.game.players[data.currentPlayer], data.game, $rootScope.meta);
+    if (data.move && $rootScope.meta.you == 0 && !data.game.finished) {
+      console.log("applying AI move");
+      if (actions.applyMove(data.move, data.game)) {
         update();
       }
       else {
-        if (data.game.players[data.currentPlayer].actions[0].kind == 'Rome Demands') {
-          $rootScope.meta.glory = data.game.players[data.currentPlayer];
-        } else if (data.game.players[data.currentPlayer].actions[0].kind == 'Craftsman') {
+        if (data.game.players[data.game.currentPlayer].actions[0].kind == 'Rome Demands') {
+          $rootScope.game.glory = data.game.players[data.game.currentPlayer];
+        } else if (data.game.players[data.game.currentPlayer].actions[0].kind == 'Craftsman') {
           // deselect all cards in players hand following a craftsman for fountain
-          data.game.players[data.currentPlayer].hand.forEach(function(card) {
+          data.game.players[data.game.currentPlayer].hand.forEach(function(card) {
             card.selected = false;
           }, this);
         }
-        actions.useAction(data.game.players[data.currentPlayer], data.game, $rootScope.meta);
+        actions.useAction(data.game.players[data.game.currentPlayer], data.game);
         update();
       }
     }
@@ -55,7 +51,7 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
 
   // when the game is first created
   socket.on('created', function (data) {
-    $rootScope.meta.room = data.gameid;
+    $rootScope.game.room = data.gameid;
   });
 
   // when you are accepted into an existing game
@@ -64,7 +60,7 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
       return {name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], ai: name == 'AI'};
     });
     $rootScope.meta.you = players.length - 1;
-    $rootScope.meta.created = true;
+    $rootScope.game.created = true;
   });
 
   // when another player joins your game
@@ -84,12 +80,7 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
   socket.on('reconnect', function() {
     console.log('reconnect');
     socket.emit('reconnection', {
-      game: $rootScope.game,
-      leader: $rootScope.meta.leader,
-      turn: $rootScope.meta.turn,
-      currentPlayer: $rootScope.meta.currentPlayer,
-      room: $rootScope.meta.room,
-      finished: $rootScope.meta.finished
+      game: $rootScope.game
     });
   });
 

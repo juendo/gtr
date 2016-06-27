@@ -1,16 +1,16 @@
 .player-building-area(
-  ng-if='!meta.finished',
+  ng-if='!game.finished',
   ng-repeat='building in player.buildings track by $index',
   ng-style='{ "max-width" : (game.players.length == 2 ? 23.75 : 31.666667) + "%", "width" : buildingWidth(player.buildings.length + (player.publicBuildings ? player.publicBuildings.length : 0)) + "%" }'
 )
   img.building(
     ng-drop='true', 
-    ng-drop-success='(yourTurn() && ($parent.$parent.$index == meta.you || hasStairway(you()))) ? dragEnded(you(), $data, $event, building, game, meta) : null', 
+    ng-drop-success='(yourTurn() && ($parent.$parent.$index == meta.you || hasStairway(you()))) ? dragEnded(you(), $data, $event, building, game, $index) : null',
     src='images/cards/{{ building.name }}.png',
     alt='{{ building.name }}',
-    ng-click='(building.name == "Vomitorium" && yourTurn() && $parent.$parent.$index == meta.you) ? vomitorium(you(), game.pool) : ($parent.$parent.$index != meta.you && yourTurn() ? prison(you(), building, player, $index, game, meta) : null)',
+    ng-click='(building.name == "Vomitorium" && yourTurn() && $parent.$parent.$index == meta.you) ? vomitorium(you(), game.pool) : ($parent.$parent.$index != meta.you && yourTurn() ? prison(you(), building, player, $index, game) : null)',
     ng-style='{ "border-color" : "#" + (player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000") }',
-    ng-class='{ "is-relevant" : $parent.$parent.$index == meta.currentPlayer && hasAbilityToUse(building.name, player) && player.actions[0] && relevantAction(building.name, player.actions[0]) }'
+    ng-class='{ "is-relevant" : $parent.$parent.$index == game.currentPlayer && hasAbilityToUse(building.name, player) && player.actions[0] && relevantAction(building.name, player.actions[0]) }'
   )
   .materials-holder(
     ng-style='{ "background" : "repeating-linear-gradient(-45deg, #FFF, #FFF 7px, #" + colors[building.siteColor] + " 7px, #" + colors[building.siteColor] + " 14px)" }',

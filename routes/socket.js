@@ -5,21 +5,21 @@ module.exports = function (io) {
 
   return function(socket) {
     socket.on('update', function (data) {
-      socket.join(data.room);
+      socket.join(data.game.room);
       if (data.ai) {
         setTimeout(function() {
           var moves = require('./moves');
-          data.move = moves(data, data.currentPlayer);
+          data.move = moves(data, data.game.currentPlayer);
           socket.emit('change', data);
           socket.broadcast.to(data.room).emit('change', data);
-          if (gamesList.gamePlayers[data.room]) {
-            delete gamesList.gamePlayers[data.room];
+          if (gamesList.gamePlayers[data.game.room]) {
+            delete gamesList.gamePlayers[data.game.room];
           }
         }, 1000);
       } else {
-        socket.broadcast.to(data.room).emit('change', data);
-        if (gamesList.gamePlayers[data.room]) {
-          delete gamesList.gamePlayers[data.room];
+        socket.broadcast.to(data.game.room).emit('change', data);
+        if (gamesList.gamePlayers[data.game.room]) {
+          delete gamesList.gamePlayers[data.game.room];
         }
       }
     });
@@ -45,7 +45,7 @@ module.exports = function (io) {
       if (
           gamesList.gamePlayers[data.room]
       &&  io.sockets.adapter.rooms[data.room] 
-      &&  Object.keys(io.sockets.adapter.rooms[data.room]).length < 3) {
+      &&  Object.keys(io.sockets.adapter.rooms[data.room]).length < 5) {
         gamesList.gamePlayers[data.room].push('AI');
         socket.emit('ai joined', 'AI');
         socket.broadcast.to(data.room).emit('ai joined', 'AI');
@@ -56,7 +56,7 @@ module.exports = function (io) {
       if (
           gamesList.gamePlayers[data.room]
       &&  io.sockets.adapter.rooms[data.room] 
-      &&  Object.keys(io.sockets.adapter.rooms[data.room]).length < 3 
+      &&  Object.keys(io.sockets.adapter.rooms[data.room]).length < 5
       &&  data.name.length > 0 && data.name.length <= 15) 
       {
         socket.join(data.room);

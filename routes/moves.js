@@ -113,13 +113,13 @@ class GameState {
     for (var i = 0; i < this.player.hand.length; i++) {
       if (this.player.hand[i].color == this.player.actions[0].color || this.player.hand[i].color == 'black') {
         if (this.player.actions[0].color == 'blue' && this.player.stockpile.length > 0) {
-          moves.push({kind: 'Follow', index: i});
+          moves.push({kind: 'Follow', cards: [i]});
         }
         else if (this.player.actions[0].color == 'yellow' && this.game.pool['green'] + this.game.pool['yellow'] + this.game.pool['red'] + this.game.pool['grey'] + this.game.pool['purple'] + this.game.pool['blue'] > 0) {
-          moves.push({kind: 'Follow', index: i});
+          moves.push({kind: 'Follow', cards: [i]});
         }
         else if (this.player.actions[0].color == 'green' && this.player.hand.length > 4) {
-          moves.push({kind: 'Follow', index: i});
+          moves.push({kind: 'Follow', cards: [i]});
         }
         else if (this.player.actions[0].color == 'grey') {
           var unfinished = 0;
@@ -127,11 +127,11 @@ class GameState {
             if (building.done) unfinished++;
           });
           if (unfinished < 3 || this.player.stockpile.length > 0) {
-            moves.push({kind: 'Follow', index: i});
+            moves.push({kind: 'Follow', cards: [i]});
           }
         }
         else if (this.player.actions[0].color == 'red' && this.player.hand.length > 3) {
-          moves.push({kind: 'Follow', index: i});
+          moves.push({kind: 'Follow', cards: [i]});
         }
         else if (this.player.actions[0].color == 'purple') {
           var inf = 2;
@@ -145,7 +145,7 @@ class GameState {
             }
           });
           if (this.player.clientele.length < inf) {
-            moves.push({kind: 'Follow', index: i});
+            moves.push({kind: 'Follow', cards: [i]});
           }
         }
       }
