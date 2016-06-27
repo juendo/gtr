@@ -8,6 +8,6 @@
     ng-click='yourTurn() ? handClicked(you(), game, {index: $index, card: c}) : null', 
     ng-repeat='c in you().hand track by $index', 
     style='left: {{ $index * spacing(you().hand.length) }}px;bottom:{{ 4 + (c.selected ? 4 : 0) }}%;{{ isDragging ? "height:92%;" : ""}};{{ c.selected ? "-webkit-filter:brightness(90%);" : "" }}',
-    src='images/cards/{{ c.name }}.png', 
-    alt='{{ c.name }}'
+    ng-src='images/cards/{{ c.name }}.png', 
+    ng-alt='{{ c.name }}'
   )
