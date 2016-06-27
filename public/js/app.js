@@ -1,1 +1,1 @@
-angular.module('GTR', ['GTR.filters', 'GTR.directives', 'ngDraggable']);
+angular.module('GTR', ['GTR.directives', 'ngDraggable']);

@@ -17,11 +17,8 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
     if (isDragging) isDragging = false;
 
     else {
-      if (action == undefined) {
-        return;
-      } 
-      else if (action.kind == 'Rome Demands' && data.card.name != 'Jack') move = {kind: 'Rome Demands', data: data};
-      else if (action.kind == 'Legionary' && data.card.name != 'Jack') move = {kind: 'Legionary', index: data.index, data: data};
+      if (action.kind == 'Rome Demands' && data.card.name != 'Jack') move = {kind: 'Rome Demands', data: data};
+      else if (action.kind == 'Legionary' && data.card.name != 'Jack') move = {kind: 'Legionary', data: data};
       else if (action.kind == 'Patron' && data.card.name != 'Jack') move = {kind: 'Aqueduct', data: data};
       else if (action.kind == 'Laborer' && data.card.name != 'Jack') move = {kind: 'Dock', data: data};
       else if (action.kind == 'Merchant' && data.card.name != 'Jack') move = {kind: 'Basilica', data: data};
@@ -40,11 +37,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
         }
       }
 
-      if (move && actions.applyMove(move, game)) {
-      
-        update();
-      }
-      if (actions.checkIfGameOver(game)) update();
+      if (move && actions.applyMove(move, game)) update();
     }   
   }
 
@@ -54,32 +47,23 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
     var action = player.actions[0];
     var move;
 
-    if (action && (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) move = {kind: 'Refill'};
+    if (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think') move = {kind: 'Refill'};
     else if (action.kind == 'Merchant') move = {kind: 'Atrium'};
     else if (action.kind == 'Patron') move = {kind: 'Bar'};
     else if (action.kind == 'Craftsman') move = {kind: 'Fountain'};
 
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   $scope.drawOne = function(player, game) {
     var action = player.actions[0];
     var move;
 
-    if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
+    if (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think') {
       move = {kind: 'Draw One'};
     }
 
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   $scope.skipAction = function(player, game) {
@@ -99,16 +83,11 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
     var action = player.actions[0];
     var move;
 
-    if (action != undefined && 
-          (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think')) {
+    if (action.kind == 'Lead' || action.kind == 'Follow' || action.kind == 'Think') {
       move = {kind: 'Take Jack'};
     }
 
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   // called when a drag ends over a structure
@@ -119,7 +98,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
 
     if (isDragging) isDragging = false;
 
-    if (action == undefined || 
+    if (!action || 
         (player.actions[0].kind != 'Craftsman' &&
          player.actions[0].kind != 'Architect')) {
       return;
@@ -133,11 +112,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
     else if (data.color && action.kind == 'Architect') {
       move = {kind: 'Fill from Pool', building: index, color: data.color};
     }
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   // called when a space in the pool is clicked
@@ -153,8 +128,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
       }
     }
 
-    if (action == undefined || 
-        (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Statue' && action.kind != 'Craftsman' && action.kind != 'Architect')) {
+    if (game.pool[color] <= 0 && action.kind != 'Lead' && action.kind != 'Follow' && action.kind != 'Craftsman' && action.kind != 'Architect') {
       return;
     } 
     else if (action.kind == 'Lead') {
@@ -173,11 +147,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
       move = {kind: 'Lay', index: cards[0], color: color};
     }
 
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   // called when a material in your stockpile is clicked
@@ -186,15 +156,11 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
     var action = player.actions[0];
     var move;
 
-    if (action != undefined && action.kind == 'Merchant') {
+    if (action.kind == 'Merchant') {
       move = {kind: 'Merchant', data: data};
     }
 
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   $scope.pendingClicked = function(player, data, game) {
@@ -202,44 +168,33 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
     var action = player.actions[0];
     var move;
 
-    if (action != undefined && action.kind == 'Sewer') {
+    if (action.kind == 'Sewer') {
       move = {kind: 'Sewer', data: data};
     }
 
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   $scope.vomitorium = function(player, pool) {
     var action = player.actions[0];
     var move;
-    if (action != undefined 
-      && (action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow')) {
+    if (action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow') {
       move = {kind: 'Vomitorium'};
     }
-    if (move) actions.applyMove(move, game);
+    if (move && actions.applyMove(move, game)) update();
   }
 
   $scope.prison = function(player, building, opponent, index, game) {
     var action = player.actions[0];
     var move;
-    if (action != undefined
-      && action.kind == 'Prison') {
+    if (action.kind == 'Prison') {
       move = {kind: 'Prison', building: building, opponent: opponent, index: index};
     }
-    if (move && actions.applyMove(move, game)) {
-    
-      update();
-    }
-    if (actions.checkIfGameOver(game)) update();
+    if (move && actions.applyMove(move, game)) update();
   }
 
   $scope.canSkipCurrentAction = function(player, game) {
     var action = player.actions[0];
-    if (action == undefined) return false;
     switch (action.kind) {
       case 'Jack':
       case 'Lead':
@@ -305,7 +260,6 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
   }
 
   $scope.triggerReconnect = function() {
-    console.log('triggered reconnect');
     socket.emit('reconnection', {
       game: $scope.game
     });

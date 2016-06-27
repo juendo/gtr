@@ -15,7 +15,7 @@
       .stockpile-material(
         ng-if='player.vault.length > 0',
         ng-repeat-start='material in player.vault track by $index',
-        ng-style='{ "background-color" : "#" + colors[material], "width" : 83.333333 / player.vault.length + "%" }'
+        ng-style='{ "background-color" : "#" + colors[material.color], "width" : 83.333333 / player.vault.length + "%" }'
       )
       .stockpile-spacing.end(
         ng-repeat-end='',

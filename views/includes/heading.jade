@@ -19,7 +19,7 @@
             | {{ player.hand.length }} CARDS
     .player-action-container
         .player-action(style='color:#{{(player.actions[0] != undefined && actionColors[player.actions[0].kind] == "FFF") ? "000" : "FFF"}};background-color:#{{player.actions[0] != undefined ? actionColors[player.actions[0].kind] : "222"}}')
-            | {{ player.actions[0].description }}{{ actionNumber(player) > 1 ? " " + actionNumber(player) : "" }}
+            | {{ player.actions[0].description }}{{ actionNumber(player) > 1 && player.actions[0].kind !== "Rome Demands" ? " × " + actionNumber(player) : "" }}
     .player-vault
         span(style='color:#FFF')
             | {{ player.vault.length }} 

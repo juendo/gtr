@@ -28,9 +28,8 @@ module.exports = function(config) {
         'node_modules/angular-mocks/angular-mocks.js',
         'public/js/app.js',
         'public/js/actions.js',
-        'public/js/controllers.js',
+        'public/js/controller.js',
         'public/js/directives.js',
-        'public/js/filters.js',
         'tests/*.js'
     ],
 

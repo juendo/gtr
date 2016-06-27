@@ -12,16 +12,16 @@
         ) 
           | {{ player.name }}
       .form-group.game-button
-        button.btn.btn-def.btn-block(
+        button.setup.btn.btn-def.btn-block(
           type='button', 
           ng-click='start(game)'
         )
           | Start Game
       .form-group.game-button
-        button.btn.btn-def.btn-block(
+        button.setup.btn.btn-def.btn-block(
           type='button', 
           ng-click='addAI(game)'
         )
           | Add AI
       .form-group.game-button
-        button.btn.btn-def.btn-block#join-game(type='button') Leave Game
+        button.setup.btn.btn-def.btn-block#join-game(type='button') Leave Game

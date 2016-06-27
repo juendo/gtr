@@ -30,7 +30,6 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
 
     // apply move if AI opponent moved, only for the player who created the game
     if (data.move && $rootScope.meta.you == 0 && !data.game.finished) {
-      console.log("applying AI move");
       if (actions.applyMove(data.move, data.game)) {
         update();
       }
@@ -72,13 +71,8 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
     $rootScope.game.players.push({name:'AI',buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], ai: true});
   });
 
-  socket.on('disconnect', function() {
-    console.log('disconnect');
-  });
-
   // if reconnecting, request missed data from server
   socket.on('reconnect', function() {
-    console.log('reconnect');
     socket.emit('reconnection', {
       game: $rootScope.game
     });

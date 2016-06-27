@@ -1,6 +1,5 @@
 body{
   background-color: black;
-  background-image: url("/images/cards/Jack.png");
 }
 
 div.well{
@@ -24,7 +23,17 @@ div.well{
   padding: 40px;
 }
 
-.btn {
+button.btn {
   background-color: black;
   color: white;
+  outline: none;
+}
+button.btn:focus, button.btn:active {
+  color: white;
+  outline: none;
+}
+
+button.btn:hover {
+  color: #CCC;
+  outline: none;
 }

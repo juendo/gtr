@@ -1,6 +1,8 @@
 'use strict'
+
+// AI that plays each action according to basic rules of thumb
 // want to get all possible legal moves for a player
-class GameState {
+class BasicAI {
   constructor(data, current) {
     // extract the VISIBLE information
 
@@ -321,6 +323,6 @@ class GameState {
 }
 
 module.exports = function(game, current) {
-  var g = new GameState(game, current);
+  var g = new BasicAI(game, current);
   return g.moveset();
 }

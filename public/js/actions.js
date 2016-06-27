@@ -1,14 +1,3 @@
-// EACH SHOULD RETURN FALSE IF ACTION IS NOT LEGAL
-// AND SHOULD ALLOW EXHAUSTIVE POSSIBLE INPUTS
-// EACH SHOULD RETURN NEW GAME STATE IF SOMETHING CHANGED
-// AND SHOULD CALL USE ACTION AUTOMATICALLY INSTEAD OF 
-// HAVING TO CHECK IF AN ACTION WAS PERFORMED
-
-// OR, APPLY MOVE SHOULD CREATE NEW GAME STATE DUPLICATE OBJECT
-// THEN PERFORM THE ACTION AND RETURN THE OLD OR NEW GAME STATE
-// BASICALLY NEED A WAY TO TELL LEGAL MOVE BUT ACTION NOT FINISHED FROM ILLEGAL MOVE
-// RETURN NULL FOR ILLEGAL MOVE?
-
 var roles = 
   { 'yellow' : 'Laborer',
     'green' : 'Craftsman',
@@ -118,7 +107,7 @@ var actions = {
   score: function(player) {
     var vaultPoints = 0;
     player.vault.forEach(function(material) {
-      vaultPoints += colorValues[material];
+      vaultPoints += colorValues[material.color];
     });
     var wallPoints = this.hasAbilityToUse('Wall', player) ? player.stockpile.length / 2 >> 0 : 0;
     var statuePoints = this.hasAbilityToUse('Statue', player) ? 3 : 0;
@@ -362,7 +351,7 @@ var actions = {
         for (var i = 0; i < game.players.length; i++) {
           var count = 0;
           game.players[i].vault.forEach(function(material) {
-            if (material == role) {
+            if (material.color == role) {
               count++;
             }
           });
@@ -460,7 +449,7 @@ var actions = {
           // loop through clientele and take if matches and have space
           for (var j = 0; j < game.players[i].clientele.length; j++) {
             if (roles[color] == game.players[i].clientele[j] && game.players[i].vault.length < this.vaultLimit(player)) {
-              player.vault.push(roleColors[game.players[i].clientele.splice(j, 1)[0]]);
+              player.vault.push({visibility: 'public', color: roleColors[game.players[i].clientele.splice(j, 1)[0]]});
               break;
             }
           }
@@ -471,23 +460,9 @@ var actions = {
     return this.useAction(player, game);
   },
 
-  prepareToLay: function(player, color, game, action) {
+  prepareToLay: function(player, color, game, action, index) {
     // find the index of the single selected card the player has
-    var index = -1;
-    var card;
-    for (var i = 0; i < player.hand.length; i++) {
-      if (player.hand[i].selected) {
-        if (index > -1) {
-          return false;
-        } else {
-          index = i;
-          card = player.hand[i];
-        } 
-      }
-    }
-    if (index == -1) {
-      return false;
-    }
+    var card = player.hand[index];
 
     if (card.color != color && card.name != 'Statue') {
       return false;
@@ -498,16 +473,16 @@ var actions = {
     return this.layFoundation(player, game, data, action);
   },
 
-  lead: function(player, game, data, action) {
+  lead: function(player, game, data, action, cards) {
 
 
     var color = data.card.color;
 
-    // extract the cards the player has selected
     var selectedCards = [];
-    player.hand.forEach(function(card) {
-      card.selected ? selectedCards.push(card) : null;
-    }, this);
+    for (var i = 0; i < cards.length; i++) {
+      selectedCards.push(player.hand[cards[i]]);
+    }
+
     // check if that selection can be used to lead the selected role
     if (!this.validSelection(player, selectedCards, color)) {
       return false;
@@ -535,16 +510,16 @@ var actions = {
     return this.useAction(player, game);
   },
 
-  follow: function(player, game, data, action) {
+  follow: function(player, game, data, action, cards) {
 
 
 
     var color = data.card.color;
     // extract the cards the player has selected
     var selectedCards = [];
-    player.hand.forEach(function(card) {
-      card.selected ? selectedCards.push(card) : null;
-    }, this);
+    for (var i = 0; i < cards.length; i++) {
+      selectedCards.push(player.hand[cards[i]]);
+    }
 
     if (action.color == color && this.validSelection(player, selectedCards, color)) {
       player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
@@ -815,7 +790,7 @@ var actions = {
           data.material
       && !action.takenFromStockpile)
       {
-        player.vault.push(data.material);
+        player.vault.push({visibility: 'public', color: data.material});
         player.stockpile.splice(data.index, 1);
         action.takenFromStockpile = true;
         return (!basilica || !!action.takenFromHand) ? this.useAction(player, game) : game;
@@ -825,7 +800,7 @@ var actions = {
       && !action.takenFromHand
       &&  basilica)
       {
-        player.vault.push(data.card.color);
+        player.vault.push({visibility: 'owner', color: data.card.color});
         player.hand.splice(data.index, 1);
         action.takenFromHand = true;
         return !!action.takenFromStockpile ? this.useAction(player, game) : game;
@@ -836,7 +811,7 @@ var actions = {
       &&  data.deck.length > 0
       && !action.takenFromStockpile)
       {
-        player.vault.push(data.deck.pop().color);
+        player.vault.push({visibility: 'none', color: data.deck.pop().color});
         if (data.deck.length == 0) data.game.finished = true;
         action.takenFromStockpile = true;
         return (!basilica || !!action.takenFromHand) ? this.useAction(player, game) : game;
@@ -1018,77 +993,181 @@ var actions = {
     return game;
   },
 
+  visibleState: function(game) {
+    // return the game state as observed by the current player
+    // i.e. the number of cards in the deck, cards in opponents hands, buildings, visible vaults etc.
+    var player = game.players[game.currentPlayer];
+    var playerVault = [];
+    player.vault.forEach(function(material) {
+      if (material.visibility !== 'none') playerVault.push(material.color);
+    });
+
+    var visiblePlayer = {
+      name: player.name,
+      buildings: player.buildings,
+      hand: player.hand.map(function(card) {
+        return {
+          name: card.name,
+          color: card.color
+        }
+      }),
+      stockpile: player.stockpile,
+      clientele: player.clientele,
+      clienteleLimit: actions.clienteleLimit(player),
+      vaultLength: player.vault.length,
+      visibleVault: playerVault,
+      vaultLimit: actions.vaultLimit(player),
+      actions: player.actions,
+      pending: player.pending.map(function(pending) {
+        return {
+          color: pending.color
+        }
+      })
+    };
+
+    var visibleOpponent = function(opponent) {
+      var jacks = 0;
+      opponent.hand.forEach(function(card) {
+        if (card.name === 'Jack') jacks++;
+      });
+
+      var opponentVault = [];
+      opponent.vault.forEach(function(material) {
+        if (material.visiblity === 'public') opponentVault.push(material.color);
+      });
+
+      return {
+        name: opponent.name,
+        buildings: opponent.buildings,
+        handLength: opponent.hand.length,
+        jacks: jacks,
+        stockpile: opponent.stockpile,
+        clientele: opponent.clientele,
+        clienteleLimit: actions.clienteleLimit(opponent),
+        vaultLength: opponent.vault.length,
+        visibleVault: opponentVault,
+        vaultLimit: actions.vaultLimit(player),
+        actions: opponent.actions,
+        pending: opponent.pending.map(function(pending) {
+          return {
+            color: pending.color
+          }
+        })
+      }
+    };
+
+    var players = [];
+    for (var i = 0; i < game.players.length; i++) {
+      if (i === game.currentPlayer) {
+        players.push(visiblePlayer);
+      } else {
+        players.push(visibleOpponent(game.players[i]));
+      }
+    }
+
+    return {
+      players: players,
+      pool: game.pool,
+      sites: game.sites,
+      leader: game.leader,
+      currentPlayer: game.currentPlayer,
+      deckLength: game.deck.length
+    };
+  },
+
   applyMove: function(move, game) {
 
     var player = game.players[game.currentPlayer];
 
     if (typeof angular !== undefined) {
       $.ajax( { url: "https://api.mlab.com/api/1/databases/moves/collections/Moves?apiKey=B7VeiL13HNY2oYoAiedtMr6YNaxczG3f",
-        data: angular.toJson({player: player.name, move: move, game: game}),
+        data: angular.toJson({name: player.name, move: move, game: this.visibleState(game)}),
         type: "POST",
         contentType: "application/json" } );
     }
 
+    var newState = false;
+
     switch (move.kind) {
       case 'Refill': 
-        return this.think(player, game);
+        newState = this.think(player, game);
+        break;
       case 'Draw One':
-        return this.drawOne(player, game);
+        newState = this.drawOne(player, game);
+        break;
       case 'Take Jack':
-        return this.takeJack(player, game);
+        newState = this.takeJack(player, game);
+        break;
       case 'Vomitorium':
-        return this.vomitorium(player, game.pool, game);
+        newState = this.vomitorium(player, game.pool, game);
+        break;
       case 'Lead':
-        for (var i = 0; i < move.cards.length; i++) {
-          player.hand[move.cards[i]].selected = true;
-        }
-        return this.lead(player, game, {card:{name: '', color: move.role}}, player.actions[0]);
+        newState = this.lead(player, game, {card:{name: '', color: move.role}}, player.actions[0], move.cards);
+        break;
       case 'Patron':
-        return this.patron(player, move.color, game.pool, null, player.actions[0], game);
+        newState = this.patron(player, move.color, game.pool, null, player.actions[0], game);
+        break;
       case 'Aqueduct':
-        return this.patron(player, null, null, move.data, player.actions[0], game);
+        newState = this.patron(player, null, null, move.data, player.actions[0], game);
+        break;
       case 'Bar':
-        return this.patron(player, null, null, {deck: game.deck, game: game}, player.actions[0], game);
+        newState = this.patron(player, null, null, {deck: game.deck, game: game}, player.actions[0], game);
+        break;
       case 'Merchant':
-        return this.merchant(player, move.data, player.actions[0], game);
+        newState = this.merchant(player, move.data, player.actions[0], game);
+        break;
       case 'Atrium':
-        return this.merchant(player, {deck: game.deck, game: game}, player.actions[0], game);
+        newState = this.merchant(player, {deck: game.deck, game: game}, player.actions[0], game);
+        break;
       case 'Basilica':
-        return this.merchant(player, move.data, player.actions[0], game);
+        newState = this.merchant(player, move.data, player.actions[0], game);
+        break;
       case 'Laborer':
-        return this.laborer(player, move.color, game.pool, null, player.actions[0], game);
+        newState = this.laborer(player, move.color, game.pool, null, player.actions[0], game);
+        break;
       case 'Dock':
-        return this.laborer(player, null, null, move.data, player.actions[0], game);
+        newState = this.laborer(player, null, null, move.data, player.actions[0], game);
+        break;
       case 'Fill from Hand':
-        return this.fillStructureFromHand(player.buildings[move.building], player, move.data, game, player.actions[0]);
+        newState = this.fillStructureFromHand(player.buildings[move.building], player, move.data, game, player.actions[0]);
+        break;
       case 'Fill from Stockpile':
-        return this.fillStructureFromStockpile(player.buildings[move.building], player, move.data, game, player.actions[0]);
+        newState = this.fillStructureFromStockpile(player.buildings[move.building], player, move.data, game, player.actions[0]);
+        break;
       case 'Fill from Pool':
-        return this.fillStructureFromPool(player.buildings[move.building], player, move.color, game, player.actions[0]);
+        newState = this.fillStructureFromPool(player.buildings[move.building], player, move.color, game, player.actions[0]);
+        break;
       case 'Lay':
-        player.hand[move.index].selected = true;
-        return this.prepareToLay(player, move.color, game, player.actions[0]);
+        newState = this.prepareToLay(player, move.color, game, player.actions[0], move.index);
+        break;
       case 'Fountain':
-        return this.fountain(player, game.deck, game, player.actions[0]);
+        newState = this.fountain(player, game.deck, game, player.actions[0]);
+        break;
       case 'Follow':
-        move.cards.forEach(function(index) {
-          player.hand[index].selected = true;
-        });
-        return this.follow(player, game, {card:{name: '', color: player.actions[0].color}}, player.actions[0]);
+        newState = this.follow(player, game, {card:{name: '', color: player.actions[0].color}}, player.actions[0], move.cards);
+        break;
       case 'Legionary':
-        return this.legionary(player, game, move.data, player.actions[0]);
+        newState = this.legionary(player, game, move.data, player.actions[0]);
+        break;
       case 'Rome Demands':
-        return this.romeDemands(player, game, move.data, player.actions[0]);
+        newState = this.romeDemands(player, game, move.data, player.actions[0]);
+        break;
       case 'Prison':
-        return this.prison(player, move.building, move.opponent, move.index, game);
+        newState = this.prison(player, move.building, move.opponent, move.index, game);
+        break;
       case 'Sewer':
-        return this.sewer(player, move.data, game);
+        newState = this.sewer(player, move.data, game);
+        break;
       case 'Skip':
-        return this.useAction(player, game);
+        newState = this.useAction(player, game);
+        break;
       default:
-        return false;
-        
+        newState = false;
     }
+    if (newState) actions.checkIfGameOver(newState);
+
+    return newState;
+
   }
 };
 
