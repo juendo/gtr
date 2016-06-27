@@ -4,8 +4,8 @@
   ng-style='{ "max-width" : (game.players.length == 2 ? 23.75 : 31.666667) + "%", "width" : buildingWidth(player.buildings.length + (player.publicBuildings ? player.publicBuildings.length : 0)) + "%" }'
 )
   img.building(
-    src='images/cards/{{ building }}.png',
-    alt='{{ building }}',
+    ng-src='images/cards/{{ building }}.png',
+    ng-alt='{{ building }}',
     ng-click='(building == "Vomitorium" && yourTurn()) ? vomitorium(you(), game.pool) : null',
     ng-style='{ "border-color" : "#" + player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000", "opacity" : "0.5" }',
     ng-class='{ "is-relevant" : $parent.$parent.$index == game.currentPlayer && hasAbilityToUse(building, player) && player.actions[0] && relevantAction(building, player.actions[0]) }'
