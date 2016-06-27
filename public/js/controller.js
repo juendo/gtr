@@ -233,7 +233,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, socke
   };
 
   // when join game button is pressed
-  $scope.joinGame = function(meta) {
+  $scope.joinGame = function(game) {
     socket.emit('join', {room: game.room, name: game.name});
   }
 
