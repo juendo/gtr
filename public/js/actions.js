@@ -1096,7 +1096,8 @@ var actions = {
       sites: game.sites,
       leader: game.leader,
       currentPlayer: game.currentPlayer,
-      deckLength: game.deck.length
+      deckLength: game.deck.length,
+      room: game.room
     };
   },
 
