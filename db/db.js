@@ -4,16 +4,13 @@ var MongoClient = require('mongodb').MongoClient
 // Connection URL
 var url = require('./password');
 
-var leadCounts = require('./queries/lead_counts'),
-  followCounts = require('./queries/follow_counts'),
-  followChances = require('./queries/follow_chances'),
-  moveCounts = require('./queries/move_counts');
+var queries = require('./queries');
 
 var findDocuments = function(db, callback) {
   // Get the documents collection
   var moves = db.collection('Moves');
   // Find some documents
-  moves.aggregate(moveCounts)
+  moves.aggregate(queries.move_counts)
   .toArray(function(err, docs) {
     assert.equal(err, null);
     console.log("Found the following records");
