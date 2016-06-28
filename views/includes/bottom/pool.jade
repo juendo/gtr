@@ -3,7 +3,7 @@
     ng-drag='game.pool[color] > 0 && yourTurn() && hasArchway(you())',
     ng-drag-data='{color:color}',
     ng-repeat='color in poolColors',
-    ng-click='yourTurn() ? poolClicked(you(), color, game) : null',
+    ng-click='yourTurn() && poolClicked(you(), color, game, you().actions[0].kind)',
     style='{{game.sites[color] == 0 ? ("border-style:solid;border-color:#" + colors[color] + ";") : ""}}background-color:#{{ colors[color] }};color: white;background:repeating-linear-gradient(45deg,#{{colors[color]}},#{{colors[color]}} {{game.sites[color] > 0 ? "7" : "0"}}px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "222"}} {{game.sites[color] > 0 ? "7" : "0"}}px,#{{(6 - game.sites[color] < game.players.length) ? colors[color] : "222"}} 14px)'
   )
     | {{ game.pool[color] > 0 ? game.pool[color] : "" }}

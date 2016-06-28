@@ -12,7 +12,7 @@ describe('gtr', function () {
       $scope = $rootScope.$new();
       actions = $injector.get('actions');
       controller = $controller('gtrController', 
-        { $scope: $scope, socket: {on: function(a, b) {}, emit: function(a, b) {}}, socketActions:{}, actions:actions, styling: {} });
+        { $scope: $scope, socket: {on: function(a, b) {}, emit: function(a, b) {}, update: function() {}}, actions:actions, styling: {} });
   }));
 
   describe('actions', function () {

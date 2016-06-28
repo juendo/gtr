@@ -1,8 +1,62 @@
-angular.module('GTR').factory('socketActions', function($rootScope, socket, actions) {
+angular.module('GTR', ['GTR.directives', 'ngDraggable']);
+
+if (typeof io !== 'undefined') angular.module('GTR').factory('socket', function ($rootScope, actions) {
+  
+  var iosocket = io.connect();
+  var socket = {
+    on: function (eventName, callback) {
+      iosocket.on(eventName, function () {  
+        var args = arguments;
+        $rootScope.$apply(function () {
+          callback.apply(iosocket, args);
+        });
+      });
+    },
+    emit: function (eventName, data, callback) {
+      iosocket.emit(eventName, data, function () {
+        var args = arguments;
+        $rootScope.$apply(function () {
+          if (callback) {
+            callback.apply(iosocket, args);
+          }
+        });
+      })
+    }
+  };
 
   // audio files
   var ding = new Audio('/audio/bell.m4a');
   var no = new Audio('/audio/no.wav');
+
+  var update = function() {
+    //if (isDragging) isDragging = false;
+
+    // reset all glory to rome animation statuses
+    $rootScope.game.players.forEach(function(player) {
+      if (!$rootScope.game.glory || player != $rootScope.game.glory) {
+        player.glory1 = false;
+        player.glory2 = false;
+      }
+    });
+
+    // if the player pressed glory to rome
+    if ($rootScope.game.glory) {
+      var player = $rootScope.game.glory;
+      // trigger glory to rome animation
+      if (player.glory1) {
+        player.glory1 = false;
+        player.glory2 = true;
+      } else {
+        player.glory1 = true;
+        player.glory2 = false;
+      }
+      $rootScope.game.glory = null;
+    }
+    socket.emit('update', {
+      game: $rootScope.game,
+      ai: $rootScope.game.players[$rootScope.game.currentPlayer].ai
+    });
+  }
 
   // message received indicating that another player has acted
   socket.on('change', function (data) {
@@ -78,5 +132,9 @@ angular.module('GTR').factory('socketActions', function($rootScope, socket, acti
     });
   });
 
-  return null;
+  return {
+    update: update,
+    on: socket.on,
+    emit: socket.emit
+  }
 });

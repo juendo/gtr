@@ -5,7 +5,7 @@
     ng-hover-card
     ng-drag='true', 
     ng-drag-data='{index: $index, card: c}', 
-    ng-click='yourTurn() ? handClicked(you(), game, {index: $index, card: c}) : null', 
+    ng-click='yourTurn() && handClicked(you(), game, {index: $index, card: c}, you().actions[0].kind)', 
     ng-repeat='c in you().hand track by $index', 
     style='left: {{ $index * spacing(you().hand.length) }}px;bottom:{{ 4 + (c.selected ? 4 : 0) }}%;{{ isDragging ? "height:92%;" : ""}};{{ c.selected ? "-webkit-filter:brightness(90%);" : "" }}',
     ng-src='images/cards/{{ c.name }}.png', 

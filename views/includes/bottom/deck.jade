@@ -1,11 +1,11 @@
 img.deck(
   ng-src='/images/cards/deck.png',
   ng-alt='Deck',
-  ng-click='yourTurn() ? deckClicked(you(), game) : null'
+  ng-click='yourTurn() && deckClicked(you().actions[0].kind, game)'
 )
 .deck-counter
   | {{ game.deck.length }}
 button.draw-one(
-  ng-click='yourTurn() ? drawOne(you(), game) : null'
+  ng-click='yourTurn() && drawOne(you().actions[0].kind, game)'
 )
   | DRAW 1

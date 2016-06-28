@@ -26,9 +26,9 @@ module.exports = function(config) {
         'public/bower_components/angular-socket-io/socket.js',
         'public/bower_components/ngDraggable/ngDraggable.js',
         'node_modules/angular-mocks/angular-mocks.js',
-        'public/js/app.js',
+        'public/js/socket.js',
         'public/js/actions.js',
-        'public/js/controller.js',
+        'public/js/gameController.js',
         'public/js/directives.js',
         'tests/*.js'
     ],

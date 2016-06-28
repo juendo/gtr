@@ -1,7 +1,7 @@
 img.jack(
   ng-src='/images/cards/Jack.png',
   ng-alt='Jack',
-  ng-click='yourTurn() ? jackClicked(you(), game) : null',
+  ng-click='yourTurn() && jackClicked(you().actions[0].kind, game)',
 )
 .jack-counter
   | {{ game.pool.black }}

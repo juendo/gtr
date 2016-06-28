@@ -1,39 +1,59 @@
-var roles = 
-  { 'yellow' : 'Laborer',
+var actions = {
+
+  roles: { 
+    'yellow' : 'Laborer',
     'green' : 'Craftsman',
     'grey' : 'Architect',
     'red' : 'Legionary',
     'purple' : 'Patron',
     'blue' : 'Merchant'
-  };
-var roleColors = 
-  { 'Laborer' : 'yellow',
+  },
+
+  roleColors: { 
+    'Laborer' : 'yellow',
     'Craftsman' : 'green',
     'Architect' : 'grey',
     'Legionary' : 'red',
     'Patron' : 'purple',
     'Merchant' : 'blue'
-  };
+  },
 
-var materials = 
-  { 'yellow' : 'rubble',
+  materials: { 
+    'yellow' : 'rubble',
     'green' : 'wood',
     'grey' : 'concrete',
     'red' : 'brick',
     'purple' : 'marble',
     'blue' : 'stone'
-  };
-var colorValues = 
-  { 'blank' : 0,
+  },
+
+  colorValues: { 
+    'blank' : 0,
     'yellow' : 1,
     'green' : 1,
     'grey' : 2,
     'red' : 2,
     'purple' : 3,
     'blue' : 3
-  };
+  },
 
-var actions = {
+  start: function(game) {
+
+    if (game.players.length < 2) return false;
+    game.started = true;
+    for (var i = 0; i < game.players.length; i++) {
+      game.pool[game.deck.pop().color]++;
+      while (game.players[i].hand.length < 4) {
+        game.players[i].hand.push(game.deck.pop());
+      }
+      game.players[i].hand.push({name: 'Jack', color: 'black'});
+      game.pool['black']--;
+    }
+    game.leader = Math.floor(Math.random() * (game.players.length));
+    game.currentPlayer = game.leader;
+    game.players[game.currentPlayer].actions.push({kind:'Lead', description:'LEAD or THINK'});
+    return game;
+  },
 
   addThinkIfPlayerHasAcademy: function(player, action) {
     // check if player has an academy
@@ -107,8 +127,8 @@ var actions = {
   score: function(player) {
     var vaultPoints = 0;
     player.vault.forEach(function(material) {
-      vaultPoints += colorValues[material.color];
-    });
+      vaultPoints += this.colorValues[material.color];
+    }, this);
     var wallPoints = this.hasAbilityToUse('Wall', player) ? player.stockpile.length / 2 >> 0 : 0;
     var statuePoints = this.hasAbilityToUse('Statue', player) ? 3 : 0;
     return this.influence(player) + wallPoints + statuePoints + vaultPoints + player.merchantBonus;
@@ -157,7 +177,7 @@ var actions = {
         else extraActions += counts[key] / jackLength;
       }
       for (var i = 0; i < extraActions - 1; i++) {
-        player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
+        player.actions.push({kind: this.roles[color], description: this.roles[color].toUpperCase()});
       }
       return true;
     }
@@ -225,7 +245,7 @@ var actions = {
   checkIfComplete: function(structure, player, game, actionType) {
     scriptorium = this.hasAbilityToUse('Scriptorium', player);
     if (!structure.done 
-        && (structure.materials.length >= colorValues[structure.siteColor] 
+        && (structure.materials.length >= this.colorValues[structure.siteColor] 
           || (scriptorium && structure.materials[structure.materials.length - 1] == 'purple')
           || (structure.name == 'Villa' && actionType == 'Architect'))) {
       structure.done = true;
@@ -266,12 +286,12 @@ var actions = {
     var storeroom = this.hasAbilityToUse('Storeroom', player);
     var ludusMagnus = this.hasAbilityToUse('LudusMagnus', player);
     player.clientele.forEach(function(client) {
-      if (roles[color] == client) {
+      if (this.roles[color] == client) {
         player.actions.push({kind: client, description: client.toUpperCase()});
       } else if (storeroom && color == 'yellow') {
         player.actions.push({kind: 'Laborer', description: 'LABORER'});
       } else if (ludusMagnus && client == 'Merchant') {
-        player.actions.push({kind: roles[color], description: roles[color].toUpperCase()})
+        player.actions.push({kind: this.roles[color], description: this.roles[color].toUpperCase()})
       }
     }, this);
   },
@@ -294,7 +314,7 @@ var actions = {
     if (player.influenceModifier) inf += player.influenceModifier;
     player.buildings.forEach(function(building) {
       if (building.done) {
-        inf += colorValues[building.siteColor];
+        inf += this.colorValues[building.siteColor];
       }
     }, this);
     return inf;
@@ -311,10 +331,10 @@ var actions = {
   meetsForumCriteria: function(player) {
     if (!this.hasAbilityToUse('Forum', player)) return false;
     var has = {};
-    for (var role in roles) {
+    for (var role in this.roles) {
       has[role] = 0;
       player.clientele.forEach(function(client) {
-        if (client == roles[role]) {
+        if (client == this.roles[role]) {
           has[role]++;
         }
       }, this);
@@ -345,7 +365,7 @@ var actions = {
     }, this);
     if (game.finished) {
       // for each material type
-      for (var role in roles) {
+      for (var role in this.roles) {
         var max = 0;
         var maxIndex = -1;
         for (var i = 0; i < game.players.length; i++) {
@@ -410,7 +430,7 @@ var actions = {
   },
 
   romeDemands: function(player, game, data, action) {
-    if (data.card.color == action.material) {
+    if (data.card.color == action.material && data.card.name !== 'Jack') {
       player.hand.splice(data.index, 1);
       game.players[action.demander].stockpile.push(data.card.color);
       return this.useAction(player, game);
@@ -420,7 +440,7 @@ var actions = {
   },
 
   legionary: function(player, game, data, action) {
-    if (data.card.selected) {
+    if (data.card.selected || data.card.name === 'Jack') {
       return false;
     }
     player.madeDemand = true;
@@ -433,7 +453,7 @@ var actions = {
     }
     for (var i = (game.currentPlayer + 1) % game.players.length; i != game.currentPlayer; i = (i + 1) % game.players.length) {
       if (bridge || i === (game.currentPlayer + game.players.length - 1) % game.players.length || i === ((game.currentPlayer + 1) % game.players.length)) {
-        game.players[i].actions.splice(0, 0, {kind:'Rome Demands', description:'ROME DEMANDS ' + materials[color].toUpperCase(), demander: game.currentPlayer, material: color})
+        game.players[i].actions.splice(0, 0, {kind:'Rome Demands', description:'ROME DEMANDS ' + this.materials[color].toUpperCase(), demander: game.currentPlayer, material: color})
         var palisade = this.hasAbilityToUse('Palisade', game.players[i]);
         var wall = this.hasAbilityToUse('Wall', game.players[i]);
         if (bridge && !wall) {
@@ -448,8 +468,8 @@ var actions = {
         if (colosseum && !wall && (bridge || !palisade)) {
           // loop through clientele and take if matches and have space
           for (var j = 0; j < game.players[i].clientele.length; j++) {
-            if (roles[color] == game.players[i].clientele[j] && game.players[i].vault.length < this.vaultLimit(player)) {
-              player.vault.push({visibility: 'public', color: roleColors[game.players[i].clientele.splice(j, 1)[0]]});
+            if (this.roles[color] == game.players[i].clientele[j] && game.players[i].vault.length < this.vaultLimit(player)) {
+              player.vault.push({visibility: 'public', color: this.roleColors[game.players[i].clientele.splice(j, 1)[0]]});
               break;
             }
           }
@@ -489,7 +509,7 @@ var actions = {
     }
 
     // perform the lead action
-    player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
+    player.actions.push({kind: this.roles[color], description: this.roles[color].toUpperCase()});
     this.addClientActions(player, color);
     if (this.hasAbilityToUse('CircusMaximus', player)) {
       this.addClientActions(player, color);
@@ -522,7 +542,7 @@ var actions = {
     }
 
     if (action.color == color && this.validSelection(player, selectedCards, color)) {
-      player.actions.push({kind: roles[color], description: roles[color].toUpperCase()});
+      player.actions.push({kind: this.roles[color], description: this.roles[color].toUpperCase()});
       if (this.hasAbilityToUse('CircusMaximus', player)) {
         this.addClientActions(player, color);
       }
@@ -645,16 +665,17 @@ var actions = {
       var bar = this.hasAbilityToUse('Bar', player);
 
       if (
-          pool != null
+          pool
+      &&  pool[color]
       && !action.takenFromPool) 
       {
-        player.clientele.push(roles[color]);
+        player.clientele.push(this.roles[color]);
         pool[color]--;
         action.takenFromPool = true;
         if (bath) {
           action.involvesBath = true;
           if (action.takenFromHand && action.takenFromDeck) player.actions.shift();
-          player.actions.splice(0, 0, {kind: roles[color], description: roles[color].toUpperCase()});
+          player.actions.splice(0, 0, {kind: this.roles[color], description: this.roles[color].toUpperCase()});
           return game;
         }
         return ((!bar || !!action.takenFromDeck) && (!aqueduct || !!action.takenFromHand)) ? this.useAction(player, game) : game;
@@ -662,16 +683,17 @@ var actions = {
       else if (
           data
       &&  data.card
+      &&  data.card.name !== 'Jack'
       && !action.takenFromHand
       &&  aqueduct) 
       {
-        player.clientele.push(roles[data.card.color]);
+        player.clientele.push(this.roles[data.card.color]);
         player.hand.splice(data.index, 1);
         action.takenFromHand = true;
         if (bath) {
           action.involvesBath = true;
           if (action.takenFromPool && action.takenFromDeck) player.actions.shift();
-          player.actions.splice(0, 0, {kind: roles[data.card.color], description: roles[data.card.color].toUpperCase()});
+          player.actions.splice(0, 0, {kind: this.roles[data.card.color], description: this.roles[data.card.color].toUpperCase()});
           return game;
         }
         return (!!action.takenFromPool && (!bar || !!action.takenFromDeck)) ? this.useAction(player, game) : game;
@@ -684,13 +706,13 @@ var actions = {
       &&  bar)
       {
         var col = data.deck.pop().color;
-        player.clientele.push(roles[col]);
+        player.clientele.push(this.roles[col]);
         if (data.deck.length == 0) data.game.finished = true;
         action.takenFromDeck = true;
         if (bath) {
           action.involvesBath = true;
           if (action.takenFromPool && action.takenFromHand) player.actions.shift();
-          player.actions.splice(0, 0, {kind: roles[col], description: roles[col].toUpperCase()});
+          player.actions.splice(0, 0, {kind: this.roles[col], description: this.roles[col].toUpperCase()});
           return game;
         }
         return (!!action.takenFromPool && (!aqueduct || !!action.takenFromHand)) ? this.useAction(player, game) : game;
@@ -703,6 +725,7 @@ var actions = {
     var dock = this.hasAbilityToUse('Dock', player);
     if (
         pool
+    &&  pool[color]
     && !action.takenFromPool)
     {
       player.stockpile.push(color);
@@ -712,6 +735,7 @@ var actions = {
     }
     else if (
         data
+    &&  data.card.name !== 'Jack'
     && !action.takenFromHand
     &&  dock) 
     {
@@ -797,6 +821,7 @@ var actions = {
       }
       else if (
           data.card
+      &&  data.card.name !== 'Jack'
       && !action.takenFromHand
       &&  basilica)
       {
@@ -823,11 +848,11 @@ var actions = {
   prison: function(player, building, opponent, index, game) {
     if (building.done) {
       player.buildings.push(building);
-      if (!player.influenceModifier) player.influenceModifier = -3 - colorValues[building.siteColor];
-      else player.influenceModifier -= (3 + colorValues[building.siteColor]);
+      if (!player.influenceModifier) player.influenceModifier = -3 - this.colorValues[building.siteColor];
+      else player.influenceModifier -= (3 + this.colorValues[building.siteColor]);
       opponent.buildings.splice(index, 1);
-      if (!opponent.influenceModifier) opponent.influenceModifier = 3 + colorValues[building.siteColor];
-      else opponent.influenceModifier += (3 + colorValues[building.siteColor]);
+      if (!opponent.influenceModifier) opponent.influenceModifier = 3 + this.colorValues[building.siteColor];
+      else opponent.influenceModifier += (3 + this.colorValues[building.siteColor]);
     } 
     return building.done ? this.useAction(player, game) : false;
   },
@@ -1172,6 +1197,7 @@ var actions = {
 };
 
 if (typeof angular !== 'undefined') angular.module('GTR').factory('actions', function ($rootScope) {
+
   // the game state (starts with just one player)
   $rootScope.game = 
     {
@@ -1259,44 +1285,7 @@ if (typeof angular !== 'undefined') angular.module('GTR').factory('actions', fun
   $rootScope.vaultLimit = function(player) {
     return actions.vaultLimit(player);
   }
-
-  $rootScope.relevantAction = function(building, action) {
-    switch (building) {
-      case 'Archway':
-      return action.kind == 'Architect';
-      case 'Stairway':
-      return action.kind == 'Architect' && !action.usedStairway;
-      case 'Aqueduct':
-      return action.kind == 'Patron' && !action.takenFromHand;
-      case 'Bar':
-      return action.kind == 'Patron' && !action.takenFromDeck;
-      case 'Bath':
-      return action.kind == 'Patron';
-      case 'Dock':
-      return action.kind == 'Laborer' && !action.takenFromHand;
-      case 'Fountain':
-      return action.kind == 'Craftsman';
-      case 'Atrium':
-      return action.kind == 'Merchant' && !action.takenFromDeck;
-      case 'Basilica':
-      return action.kind == 'Merchant' && !action.takenFromHand;
-      case 'Bridge':
-      case 'Colosseum':
-      return action.kind == 'Legionary';
-      case 'Wall':
-      case 'Palisade':
-      return action.kind == 'Rome Demands';
-      case 'Palace':
-      return action.kind == 'Think' || action.kind == 'Follow';
-      case 'Latrine':
-      case 'Vomitorium':
-      return action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow';
-      default:
-      return false;
-    }
-  }
-
   return actions;
 });
+else if (typeof module !== 'undefined') module.exports = actions;
 
-if (typeof module !== 'undefined') module.exports = actions;

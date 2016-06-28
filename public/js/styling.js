@@ -1,4 +1,4 @@
-angular.module('GTR').factory('styling', function($rootScope) {
+angular.module('GTR').factory('styling', function($rootScope, actions) {
 	  // EXTRA DETAILS ------------------------------------------------------------------------------------
 
   $rootScope.poolColors = 
@@ -90,6 +90,34 @@ angular.module('GTR').factory('styling', function($rootScope) {
     return number;
   }
 
+  $rootScope.canSkipCurrentAction = function(player, game) {
+    var action = player.actions[0];
+    switch (action.kind) {
+      case 'Jack':
+      case 'Lead':
+      case 'Follow':
+      case 'Think':
+      case 'Statue':
+        return false;
+      case 'Rome Demands':
+        var hasMaterial = false;
+        player.hand.forEach(function(card) {
+          hasMaterial = hasMaterial || action.material == card.color;
+        });
+        return !hasMaterial || actions.hasAbilityToUse('Wall', player) || (actions.hasAbilityToUse('Palisade', player) && !actions.hasAbilityToUse('Bridge', game.players[action.demander]));
+      default:
+        return true;
+    }
+  }
+
+  $rootScope.yourTurn = function() {
+    return $rootScope.game.currentPlayer == $rootScope.meta.you && !$rootScope.game.finished;
+  }
+
+  $rootScope.you = function() {
+    return $rootScope.game.players[$rootScope.meta.you];
+  }
+
   $rootScope.buildingWidth = function(len) {
     var ratio = 1;
     // the width of a player box
@@ -108,6 +136,42 @@ angular.module('GTR').factory('styling', function($rootScope) {
 
   $rootScope.getArray = function(num) {
     return new Array(num);};
+
+  $rootScope.relevantAction = function(building, action) {
+    switch (building) {
+      case 'Archway':
+      return action.kind == 'Architect';
+      case 'Stairway':
+      return action.kind == 'Architect' && !action.usedStairway;
+      case 'Aqueduct':
+      return action.kind == 'Patron' && !action.takenFromHand;
+      case 'Bar':
+      return action.kind == 'Patron' && !action.takenFromDeck;
+      case 'Bath':
+      return action.kind == 'Patron';
+      case 'Dock':
+      return action.kind == 'Laborer' && !action.takenFromHand;
+      case 'Fountain':
+      return action.kind == 'Craftsman';
+      case 'Atrium':
+      return action.kind == 'Merchant' && !action.takenFromDeck;
+      case 'Basilica':
+      return action.kind == 'Merchant' && !action.takenFromHand;
+      case 'Bridge':
+      case 'Colosseum':
+      return action.kind == 'Legionary';
+      case 'Wall':
+      case 'Palisade':
+      return action.kind == 'Rome Demands';
+      case 'Palace':
+      return action.kind == 'Think' || action.kind == 'Follow';
+      case 'Latrine':
+      case 'Vomitorium':
+      return action.kind == 'Lead' || action.kind == 'Think' || action.kind == 'Follow';
+      default:
+      return false;
+    }
+  }
 
   return null;
 });

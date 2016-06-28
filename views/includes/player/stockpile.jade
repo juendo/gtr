@@ -12,7 +12,7 @@
       ng-repeat-start='material in player.stockpile track by $index',
       ng-drag='$parent.$parent.$index == meta.you',
       ng-drag-data='{index: $index, material: material}', 
-      ng-click='yourTurn() && $parent.$parent.$index == meta.you ? stockpileClicked(you(), {index: $index, material: material}, game) : null', 
+      ng-click='yourTurn() && $parent.$parent.$index == meta.you && stockpileClicked(you().actions[0].kind, {index: $index, material: material}, game)', 
       ng-style='{ "background-color" : "#" + colors[material], "width" : 83.333333 / player.stockpile.length + "%" }'
     )
     .stockpile-spacing.end(

@@ -5,10 +5,10 @@
 )
   img.building(
     ng-drop='true', 
-    ng-drop-success='(yourTurn() && ($parent.$parent.$index == meta.you || hasStairway(you()))) ? dragEnded(you(), $data, $event, building, game, $index) : null',
+    ng-drop-success='(yourTurn() && ($parent.$parent.$index == meta.you || hasStairway(you()))) ? dragEnded(you().actions[0].kind, $data, game, $index) : null',
     ng-src='images/cards/{{ building.name }}.png',
     ng-alt='{{ building.name }}',
-    ng-click='(building.name == "Vomitorium" && yourTurn() && $parent.$parent.$index == meta.you) ? vomitorium(you(), game.pool) : ($parent.$parent.$index != meta.you && yourTurn() ? prison(you(), building, player, $index, game) : null)',
+    ng-click='yourTurn() && buildingClicked(you().actions[0].kind, building, $parent.$parent.$index == meta.you, player, $index, game)',
     ng-style='{ "border-color" : "#" + (player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000") }',
     ng-class='{ "is-relevant" : $parent.$parent.$index == game.currentPlayer && hasAbilityToUse(building.name, player) && player.actions[0] && relevantAction(building.name, player.actions[0]) }'
   )
