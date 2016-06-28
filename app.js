@@ -54,7 +54,7 @@ app.get('/', function(req, res){
   res.render('index');
 });
 
-var socket = require('./routes/socket');
+var socket = require('./server/socket');
 var socketServer = socket(io);
 // Socket.io Communication
 io.sockets.on('connection', socketServer);
