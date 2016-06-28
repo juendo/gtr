@@ -9,8 +9,7 @@ var session = require('express-session');
 var bodyParser = require('body-parser');
 var multer = require('multer');
 var errorHandler = require('errorhandler');
-var routes = require('./routes'),
-  http = require('http'),
+var http = require('http'),
   path = require('path');
 
 var app = module.exports = express();
@@ -51,12 +50,14 @@ app.use(express.static(path.join(__dirname, 'public')));
  */
 
 // serve index and view partials
-app.get('/', routes.index);
+app.get('/', function(req, res){
+  res.render('index');
+});
 
-var s = require('./routes/socket');
-var ss = s(io);
+var socket = require('./routes/socket');
+var socketServer = socket(io);
 // Socket.io Communication
-io.sockets.on('connection', ss);
+io.sockets.on('connection', socketServer);
 
 /**
  * Start Server
