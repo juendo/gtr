@@ -1106,10 +1106,7 @@ var actions = {
     var player = game.players[game.currentPlayer];
 
     if (typeof angular !== undefined) {
-      $.ajax( { url: "https://api.mlab.com/api/1/databases/moves/collections/Moves?apiKey=B7VeiL13HNY2oYoAiedtMr6YNaxczG3f",
-        data: angular.toJson({name: player.name, move: move, game: this.visibleState(game)}),
-        type: "POST",
-        contentType: "application/json" } );
+      var data = angular.toJson({name: player.name, move: move, game: this.visibleState(game)});
     }
 
     var newState = false;
@@ -1191,6 +1188,14 @@ var actions = {
         newState = false;
     }
     if (newState) actions.checkIfGameOver(newState);
+
+    // if move was valid, store it in the database
+    if (typeof angular !== undefined && newState) {
+      $.ajax( { url: "https://api.mlab.com/api/1/databases/moves/collections/Moves?apiKey=B7VeiL13HNY2oYoAiedtMr6YNaxczG3f",
+        data: data,
+        type: "POST",
+        contentType: "application/json" } );
+    }
 
     return newState;
 

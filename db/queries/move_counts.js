@@ -25,15 +25,27 @@ module.exports = [
   	{
   		$group: {
   			_id: {
-  				name: "$name",
-  				move: "$move",
-  				action: "$action"
-  			},
-  			moves: {
-  				$push: "$move" 
-  			}
+          id: "$_id",
+          name: "$name",
+          move: "$move"
+        },
+        action: {
+            $first: "$action"
+        }
   		}
   	},
+    {
+      $group: {
+        _id: {
+          name: "$_id.name",
+          move: "$_id.move",
+          action: "$action"
+        },
+        moves: {
+          $push: "$_id.move"
+        }
+      }
+    },
   	{
   		$group: {
   			_id: {
