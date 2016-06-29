@@ -96,9 +96,10 @@ angular.module('GTR').factory('styling', function($rootScope, actions) {
       case 'Jack':
       case 'Lead':
       case 'Follow':
-      case 'Think':
       case 'Statue':
+      case 'Think':
         return false;
+        // CAN SKIP THINKS FROM ACADEMY
       case 'Rome Demands':
         var hasMaterial = false;
         player.hand.forEach(function(card) {

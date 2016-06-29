@@ -468,7 +468,7 @@ var actions = {
         if (colosseum && !wall && (bridge || !palisade)) {
           // loop through clientele and take if matches and have space
           for (var j = 0; j < game.players[i].clientele.length; j++) {
-            if (this.roles[color] == game.players[i].clientele[j] && game.players[i].vault.length < this.vaultLimit(player)) {
+            if (this.roles[color] == game.players[i].clientele[j] && player.vault.length < this.vaultLimit(player)) {
               player.vault.push({visibility: 'public', color: this.roleColors[game.players[i].clientele.splice(j, 1)[0]]});
               break;
             }
