@@ -190,7 +190,7 @@ class BasicAI {
     for (var i = 0; i < this.player.stockpile.length; i++) {
       moves.push({kind: 'Merchant', data: {material: this.player.stockpile[i], index: i}});
     }
-    if (!moves.length) moves.push({kind: 'Skip'});
+    moves.push({kind: 'Skip'});
     return moves;
   }
 
@@ -226,7 +226,7 @@ class BasicAI {
     if (!wants['yellow'] && this.game.pool['yellow']) {
       moves.push({kind: 'Laborer', color: 'yellow'});
     }
-    if (!moves.length) moves.push({kind: 'Skip'});
+    moves.push({kind: 'Skip'});
     return moves;
   }
 

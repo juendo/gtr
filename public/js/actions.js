@@ -440,13 +440,15 @@ var actions = {
   },
 
   legionary: function(player, game, data, action) {
-    if (data.card.selected || data.card.name === 'Jack') {
+    var card = player.hand[data.index];
+    if (card.selected || card.name === 'Jack') {
+      console.log('legionary returning false');
       return false;
     }
     player.madeDemand = true;
     var bridge = this.hasAbilityToUse('Bridge', player);
     var colosseum = this.hasAbilityToUse('Colosseum', player);
-    var color = data.card.color;
+    var color = card.color;
     if (game.pool[color] > 0) {
       game.pool[color]--;
       player.stockpile.push(color);
@@ -476,7 +478,8 @@ var actions = {
         }
       }
     }
-    data.card.selected = true;
+    card.selected = true;
+    console.log('legionary returning true');
     return this.useAction(player, game);
   },
 
