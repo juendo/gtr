@@ -1105,7 +1105,7 @@ var actions = {
 
     var player = game.players[game.currentPlayer];
 
-    if (typeof angular !== undefined) {
+    if (typeof angular !== 'undefined') {
       var data = angular.toJson({name: player.name, move: move, game: this.visibleState(game)});
     }
 
@@ -1190,7 +1190,7 @@ var actions = {
     if (newState) actions.checkIfGameOver(newState);
 
     // if move was valid, store it in the database
-    if (typeof angular !== undefined && newState) {
+    if (typeof angular !== 'undefined' && newState) {
       $.ajax( { url: "https://api.mlab.com/api/1/databases/moves/collections/Moves?apiKey=B7VeiL13HNY2oYoAiedtMr6YNaxczG3f",
         data: data,
         type: "POST",

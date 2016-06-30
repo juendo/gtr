@@ -37,7 +37,7 @@ class BasicAI {
       case 'Rome Demands':
       return this.romeDemands();
       default:
-      return {kind: 'Skip'};
+      return [{kind: 'Skip'}];
     }
   }
 
@@ -107,7 +107,7 @@ class BasicAI {
     if (this.jackNum > 0) {
       moves.push({kind: 'Take Jack'});
     }
-    return moves[0];
+    return moves;
   }
 
   follow() {
@@ -158,7 +158,7 @@ class BasicAI {
     if (this.jackNum > 0) {
       moves.push({kind: 'Take Jack'});
     }
-    return moves[0];
+    return moves;
   }
 
   patron() {
@@ -182,7 +182,7 @@ class BasicAI {
       moves.push({kind: 'Patron', color: 'yellow'});
     }
     moves.push({kind: 'Skip'});
-    return moves[0];
+    return moves;
   }
 
   merchant() {
@@ -191,7 +191,7 @@ class BasicAI {
       moves.push({kind: 'Merchant', data: {material: this.player.stockpile[i], index: i}});
     }
     moves.push({kind: 'Skip'});
-    return moves[0];
+    return moves;
   }
 
   laborer() {
@@ -227,7 +227,7 @@ class BasicAI {
       moves.push({kind: 'Laborer', color: 'yellow'});
     }
     moves.push({kind: 'Skip'});
-    return moves[0];
+    return moves;
   }
 
   craftsman() {
@@ -251,7 +251,7 @@ class BasicAI {
     }
     moves.push({kind:'Skip'});
 
-    return moves[0];
+    return moves;
   }
 
   architect() {
@@ -274,7 +274,7 @@ class BasicAI {
     }
     moves.push({kind:'Skip'});
 
-    return moves[0];
+    return moves;
   }
 
   legionary() {
@@ -305,7 +305,7 @@ class BasicAI {
       }
     }
 
-    return moves[0];
+    return moves;
   }
 
   romeDemands() {
@@ -318,7 +318,7 @@ class BasicAI {
     }
     if (moves.length == 0) moves.push({kind: 'Skip'});
 
-    return moves[0];
+    return moves;
   }
 }
 

@@ -53,7 +53,7 @@ if (typeof io !== 'undefined') angular.module('GTR').factory('socket', function 
       $rootScope.game.glory = null;
     }
     socket.emit('update', {
-      game: $rootScope.game,
+      game: JSON.parse(angular.toJson($rootScope.game)),
       ai: $rootScope.game.players[$rootScope.game.currentPlayer].ai
     });
   }

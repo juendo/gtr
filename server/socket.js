@@ -8,8 +8,11 @@ module.exports = function (io) {
       socket.join(data.game.room);
       if (data.ai) {
         setTimeout(function() {
-          var basic = require('../ai/basic');
-          data.move = basic(data, data.game.currentPlayer);
+          //var basic = require('../ai/basic');
+          //data.move = basic(data, data.game.currentPlayer)[0];
+          var ai = require('../ai/game.js');
+          data.move = ai.getMove(data.game);
+
           socket.emit('change', data);
           socket.broadcast.to(data.room).emit('change', data);
           if (gamesList.gamePlayers[data.game.room]) {
