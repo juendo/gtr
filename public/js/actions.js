@@ -63,7 +63,7 @@ var actions = {
       && !player.usedAcademy
       &&  action.kind == 'Craftsman') 
     {
-      player.actions.push({kind: 'Think', description: 'THINK'});
+      player.actions.push({kind: 'Think', description: 'THINK', skippable: true});
       player.usedAcademy = true;
     }
   },
@@ -269,7 +269,7 @@ var actions = {
       }
       else if (structure.name == 'School') {
         for (var i = 0; i < this.influence(player); i++) {
-          player.actions.splice(1, 0, {kind: 'Think', description: 'THINK'});
+          player.actions.splice(1, 0, {kind: 'Think', description: 'THINK', skippable: true});
         }
       }
       else if (structure.name == 'CircusMaximus'
@@ -504,6 +504,7 @@ var actions = {
     var selectedCards = [];
     for (var i = 0; i < cards.length; i++) {
       selectedCards.push(player.hand[cards[i]]);
+      player.hand[cards[i]].selected = true;
     }
 
     // check if that selection can be used to lead the selected role
@@ -542,6 +543,7 @@ var actions = {
     var selectedCards = [];
     for (var i = 0; i < cards.length; i++) {
       selectedCards.push(player.hand[cards[i]]);
+      player.hand[cards[i]].selected = true;
     }
 
     if (action.color == color && this.validSelection(player, selectedCards, color)) {
@@ -1158,10 +1160,10 @@ var actions = {
         newState = this.fillStructureFromHand(player.buildings[move.building], player, move.data, game, player.actions[0]);
         break;
       case 'Fill from Stockpile':
-        newState = this.fillStructureFromStockpile(player.buildings[move.building], player, move.data, game, player.actions[0]);
+        newState = this.fillStructureFromStockpile(game.players[move.player].buildings[move.building], player, move.data, game, player.actions[0]);
         break;
       case 'Fill from Pool':
-        newState = this.fillStructureFromPool(player.buildings[move.building], player, move.color, game, player.actions[0]);
+        newState = this.fillStructureFromPool(game.players[move.player].buildings[move.building], player, move.color, game, player.actions[0]);
         break;
       case 'Lay':
         newState = this.prepareToLay(player, move.color, game, player.actions[0], move.index);

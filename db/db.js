@@ -10,7 +10,14 @@ var findDocuments = function(db, callback) {
   // Get the documents collection
   var moves = db.collection('Moves');
   // Find some documents
-  moves.aggregate(queries.names)
+
+  // remove undesired names
+  //moves.remove(queries.delete_names);
+
+  // rename
+  //moves.update(queries.rename_names, {$set:{name: "binman"}}, {multi: true});
+
+  moves.aggregate(queries.move_counts)
   .toArray(function(err, docs) {
     assert.equal(err, null);
     console.log("Found the following records");

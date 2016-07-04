@@ -87,18 +87,6 @@ if (typeof io !== 'undefined') angular.module('GTR').factory('socket', function 
       if (actions.applyMove(data.move, data.game)) {
         update();
       }
-      else {
-        if (data.game.players[data.game.currentPlayer].actions[0].kind == 'Rome Demands') {
-          $rootScope.game.glory = data.game.players[data.game.currentPlayer];
-        } else if (data.game.players[data.game.currentPlayer].actions[0].kind == 'Craftsman') {
-          // deselect all cards in players hand following a craftsman for fountain
-          data.game.players[data.game.currentPlayer].hand.forEach(function(card) {
-            card.selected = false;
-          }, this);
-        }
-        actions.useAction(data.game.players[data.game.currentPlayer], data.game);
-        update();
-      }
     }
   });
 

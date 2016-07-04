@@ -4,19 +4,20 @@ class GameState {
 
 	constructor(game) {
 		// make a new object
-		this.game = JSON.parse(JSON.stringify(game));
+		this.clone = require('clone');
+		this.game = this.clone(game);
 		this.actions = require('../public/js/actions.js');
 	}
 
 	legalMoves(game) {
-		var moves = require('./basic');
+		var moves = require('./legal');
 		var legal = moves({game: game}, game.currentPlayer);
 		return legal;
 	}
 
 	applyMove(move, game) {
 		// copy state
-		var prevState = JSON.parse(JSON.stringify(game));
+		var prevState = this.clone(game);
 		return this.actions.applyMove(move, prevState);
 	}
 
@@ -32,7 +33,8 @@ class GameState {
 		}
 		var maxScore = 0;
 		var winner = -1;
-		for (var i = 0; i < game.players.length; i++) {
+		var l = game.players.length;
+		for (var i = 0; i < l; i++) {
 			if (this.actions.score(game.players[i]) > maxScore) {
 				maxScore = this.actions.score(game.players[i]);
 				winner = i;
@@ -46,19 +48,22 @@ class GameState {
 	}
 
 	getState() {
-		return JSON.parse(JSON.stringify(this.game));
+		return this.clone(this.game);
 	}
 }
 
 class MonteCarlo {
 
 	constructor(game) {
+		this.clone = require('clone');
+
 		this.game = game;
 		this.states = [game.getState()];
 		this.calcTime = 30;
-		this.hash = require('object-hash');
+		this.hash = require('hash-object');
 		this.wins = {};
 		this.plays = {};
+		this.c = 1.4;
 	}
 
 	update(state) {
@@ -76,8 +81,8 @@ class MonteCarlo {
 		}
 
 		var games = 0;
-		var begin = Date.now()
-		while (games < 40) {
+		var begin = Date.now();
+		while (games < 40 && Date.now() - begin < 5000) {
 			this.runSimulation();
 			games += 1;
 		}
@@ -85,7 +90,7 @@ class MonteCarlo {
 		var moveStates = [];
 		legal.forEach(function(move) {
 			var newState = this.game.applyMove(move, state);
-			if (newState) moveStates.push({move: move, state: this.game.applyMove(move, state)});
+			if (newState) moveStates.push({move: move, state: newState});
 		}, this);
 
 		console.log("Played number of games:");
@@ -97,8 +102,9 @@ class MonteCarlo {
 		// get best move by win percentage
 		var maxWinPercent = 0;
 		var winningMove = moveStates[0].move;
-		for (var i = 0; i < moveStates.length; i++) {
-			var hash = this.hash({player: player, state: moveStates[i].state});
+		var l = moveStates.length;
+		for (var i = 0; i < l; i++) {
+			var hash = this.hash({player: player, state: moveStates[i].state.players});
 			if (this.wins[hash]) {
 				if (this.wins[hash].count / this.plays[hash].count > maxWinPercent) {
 					maxWinPercent = this.wins[hash].count / this.plays[hash].count;
@@ -109,46 +115,83 @@ class MonteCarlo {
 
 		// print wins for each move
 		moveStates.forEach(function(ms) {
-			var hash = this.hash({player: player, state: ms.state});
+			var hash = this.hash({player: player, state: ms.state.players});
 			console.log({ move: ms.move, win: 100 * (this.wins[hash] ? this.wins[hash].count : 0 ) / (this.plays[hash] ? this.plays[hash].count : 1)});
 		}, this);
-     
 
 		return winningMove;
 	}
 
 	runSimulation() {
-		var statesCopy = JSON.parse(JSON.stringify(this.states));
+		console.log('starting new simulation')
+
+		var statesCopy = this.clone(this.states);
 		var state = statesCopy[statesCopy.length - 1];
 		var visitedStates = {};
 		var expand = true;
 		var player = this.game.currentPlayer(state);
+		var originalPlayer = this.game.currentPlayer(state);
 		var winner = -1;
+		var plays = this.plays;
+		var wins = this.wins;
+		var hashFunc = this.hash;
 
-		for (var i = 0; i < 10; i++) {
+		for (var i = 0; i < 15; i++) {
+			console.log('picking next move')
 			var legal = this.game.legalMoves(state);
 
-			var rand = Math.random();
-			rand *= legal.length;
-			rand = Math.floor(rand);
-			var move = legal[rand];
-			var newState = this.game.applyMove(move, state);
-			if (newState) state = newState;
-			else break;
+			var moveStates = [];
+			var hasData = true;
+			var sum = 0;
+			legal.forEach(function(move) {
+				console.log('calculating possible game state');
+				var newState = this.game.applyMove(move, state);
+				if (newState) moveStates.push({move: move, state: newState});
+				var hash = hashFunc({player: player, state: newState.players});
+				hasData = hasData && plays[hash];
+				if (hasData) sum += plays[hash].count;
+			}, this);
+
+			if (!moveStates.length) {
+				console.log('no legal moves');
+				console.log(legal);
+			}
+
+			var move;
+			if (hasData) {
+				console.log('all moves have data');
+				var logTotal = Math.log(sum);
+				var max = 0;
+				moveStates.forEach(function(ms) {
+					var hash = hashFunc({player: player, state: ms.state.players});
+					var x = (wins[hash].count / plays[hash].count) + this.c * Math.sqrt(logTotal / plays[hash].count);
+					if (x > max) {
+						max = x;
+						move = ms.move;
+						state = ms.state;
+					}
+				}, this);
+			} else {
+				console.log('not all moves have data');
+				var rand = Math.floor(Math.random() * moveStates.length);
+				move = moveStates[rand].move;
+				state = moveStates[rand].state;
+			}
 
 			statesCopy.push(state);
 
-			var hash = this.hash({player: player, state: state});
-			if (expand && !this.plays[hash]) {
+			var hash = hashFunc({player: player, state: state.players});
+			if (expand && !plays[hash]) {
 				expand = false;
-				this.plays[hash] = {player: player, state: state, count: 0};
-				this.wins[hash] = {player: player, state: state, count: 0};
+				plays[hash] = {count: 0};
+				wins[hash] = {count: 0};
 			}
 
-			if (!visitedStates[hash]) visitedStates[hash] = {player: player, state: state};
-	
+			visitedStates[hash] = {player: player};
+			
+			console.log('checking winner');
 			player = this.game.currentPlayer(state);
-			winner = this.game.hasWinner(state) || i === 9 ? this.game.winner(state) : -1;
+			winner = this.game.hasWinner(state) || (i >= 7 && state.players[originalPlayer].actions[0] && state.players[originalPlayer].actions[0].kind === 'Lead') || i === 29 ? this.game.winner(state) : -1;
 			if (winner !== -1) {
 				break;
 			}
@@ -156,10 +199,10 @@ class MonteCarlo {
 
 		for (var ps in visitedStates) {
 		    if (visitedStates.hasOwnProperty(ps)) {
-		        if (!!this.plays[ps]) {
-		        	this.plays[ps].count += 1;
+		        if (!!plays[ps]) {
+		        	plays[ps].count += 1;
 		        	if (visitedStates[ps].player === winner) {
-		        		this.wins[ps].count += 1;
+		        		wins[ps].count += 1;
 		        	} 
 		        }
 		    }

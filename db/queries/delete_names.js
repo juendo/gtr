@@ -2,6 +2,6 @@
 
 module.exports = {
   name: {
-    $in: ["Neil", "eil", "AI"]
+    $in: ["Neil", "eil", "AI", "NEil", "Nril"]
   }
 };

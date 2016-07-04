@@ -5,7 +5,7 @@
 )
   img.building(
     ng-drop='true', 
-    ng-drop-success='(yourTurn() && ($parent.$parent.$index == meta.you || hasStairway(you()))) ? dragEnded(you().actions[0].kind, $data, game, $index) : null',
+    ng-drop-success='(yourTurn() && ($parent.$parent.$index == meta.you || hasStairway(you()))) ? dragEnded(you().actions[0].kind, $data, game, $index, $parent.$parent.$index) : null',
     ng-src='images/cards/{{ building.name }}.png',
     ng-alt='{{ building.name }}',
     ng-click='yourTurn() && buildingClicked(you().actions[0].kind, building, $parent.$parent.$index == meta.you, player, $index, game)',

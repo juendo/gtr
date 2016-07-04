@@ -17,9 +17,9 @@ angular.module('GTR').controller('gtrController', function($scope, socket, actio
     else if (action == 'Lead' || action == 'Follow')
       data.card.selected = !data.card.selected;
     else if ((action == 'Craftsman' || action == 'Architect') && data.card.name != 'Jack') {
-      if (data.card.selected && !action.usedFountain) {
+      if (data.card.selected && !player.actions[0].usedFountain) {
         data.card.selected = false;
-      } else if (!action.usedFountain) {
+      } else if (!player.actions[0].usedFountain) {
         player.hand.forEach(function(card) {
           card.selected = false;
         });
@@ -76,14 +76,14 @@ angular.module('GTR').controller('gtrController', function($scope, socket, actio
   }
 
   // called when a drag ends over a structure
-  $scope.dragEnded = function(action, data, game, index) {
+  $scope.dragEnded = function(action, data, game, index, playerIndex) {
 
     if (data.card && action == 'Craftsman')
       var move = {kind: 'Fill from Hand', building: index, data: data};
     else if (data.material && action == 'Architect')
-      var move = {kind: 'Fill from Stockpile', building: index, data: data};
+      var move = {kind: 'Fill from Stockpile', building: index, data: data, player: playerIndex};
     else if (data.color && action == 'Architect')
-      var move = {kind: 'Fill from Pool', building: index, color: data.color};
+      var move = {kind: 'Fill from Pool', building: index, color: data.color, player: playerIndex};
 
     if ((typeof move !== 'undefined') && actions.applyMove(move, game)) socket.update();
   }

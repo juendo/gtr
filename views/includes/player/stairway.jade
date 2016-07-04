@@ -7,6 +7,6 @@
     ng-src='images/cards/{{ building }}.png',
     ng-alt='{{ building }}',
     ng-click='yourTurn() && buildingClicked(you().actions[0].kind, building, true, player, $index, game)',
-    ng-style='{ "border-color" : "#" + player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000", "opacity" : "0.5" }',
+    ng-style='{ "border-color" : "#" + (player.actions[0] ? actionBorderColors[player.actions[0].kind] : "000"), "opacity" : "0.5" }',
     ng-class='{ "is-relevant" : $parent.$parent.$index == game.currentPlayer && hasAbilityToUse(building, player) && player.actions[0] && relevantAction(building, player.actions[0]) }'
 )

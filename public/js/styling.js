@@ -98,7 +98,7 @@ angular.module('GTR').factory('styling', function($rootScope, actions) {
       case 'Follow':
       case 'Statue':
       case 'Think':
-        return false;
+        return !!action.skippable;
         // CAN SKIP THINKS FROM ACADEMY
       case 'Rome Demands':
         var hasMaterial = false;

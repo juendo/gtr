@@ -7,11 +7,11 @@ class BasicAI {
     // extract the VISIBLE information
 
     // the current player
-    var game = JSON.parse(JSON.stringify(data.game));
+    var clone = require('clone');
+    var game = clone(data.game);
     this.game = game;
-    this.player = game.players[current];
+    this.player = game.players[this.game.currentPlayer];
     this.deckSize = game.deck.length;
-    this.jackNum = game.pool['black'];
     this.actions = require('../public/js/actions.js');
   }
 
@@ -104,7 +104,7 @@ class BasicAI {
     }
     moves.push({kind: 'Refill'});
     moves.push({kind: 'Draw One'});
-    if (this.jackNum > 0) {
+    if (this.game.pool['black'] > 0) {
       moves.push({kind: 'Take Jack'});
     }
     return moves;
@@ -155,7 +155,7 @@ class BasicAI {
     }
     moves.push({kind: 'Refill'});
     moves.push({kind: 'Draw One'});
-    if (this.jackNum > 0) {
+    if (this.game.pool['black'] > 0) {
       moves.push({kind: 'Take Jack'});
     }
     return moves;
@@ -188,6 +188,7 @@ class BasicAI {
   merchant() {
     var moves = [];
     for (var i = 0; i < this.player.stockpile.length; i++) {
+      // not checking vault limit
       moves.push({kind: 'Merchant', data: {material: this.player.stockpile[i], index: i}});
     }
     if (!moves.length) moves.push({kind: 'Skip'});
