@@ -105,9 +105,9 @@ class MonteCarlo {
 		var l = moveStates.length;
 		for (var i = 0; i < l; i++) {
 			var hash = this.hash({player: player, state: moveStates[i].state.players});
-			if (this.wins[hash]) {
-				if (this.wins[hash].count / this.plays[hash].count > maxWinPercent) {
-					maxWinPercent = this.wins[hash].count / this.plays[hash].count;
+			if (typeof this.wins[hash] !== 'undefined') {
+				if (this.wins[hash] / this.plays[hash] > maxWinPercent) {
+					maxWinPercent = this.wins[hash] / this.plays[hash];
 					winningMove = moveStates[i].move;
 				}
 			}
@@ -116,7 +116,7 @@ class MonteCarlo {
 		// print wins for each move
 		moveStates.forEach(function(ms) {
 			var hash = this.hash({player: player, state: ms.state.players});
-			console.log({ move: ms.move, win: 100 * (this.wins[hash] ? this.wins[hash].count : 0 ) / (this.plays[hash] ? this.plays[hash].count : 1)});
+			console.log({ move: ms.move, win: 100 * (typeof this.wins[hash] !== 'undefined' ? this.wins[hash] : 0 ) / (typeof this.plays[hash] !== 'undefined' ? this.plays[hash] : 1)});
 		}, this);
 
 		return winningMove;
@@ -134,7 +134,6 @@ class MonteCarlo {
 		var winner = -1;
 		var plays = this.plays;
 		var wins = this.wins;
-		var hashFunc = this.hash;
 
 		for (var i = 0; i < 15; i++) {
 			console.log('picking next move')
@@ -143,14 +142,23 @@ class MonteCarlo {
 			var moveStates = [];
 			var hasData = true;
 			var sum = 0;
-			legal.forEach(function(move) {
+			var keepGoing = false;
+			for (var j = 0; j < legal.length; j++) {
+				var move = legal[j];
 				console.log('calculating possible game state');
-				var newState = this.game.applyMove(move, state);
-				if (newState) moveStates.push({move: move, state: newState});
-				var hash = hashFunc({player: player, state: newState.players});
-				hasData = hasData && plays[hash];
-				if (hasData) sum += plays[hash].count;
-			}, this);
+				if (hasData || keepGoing) {
+					var newState = this.game.applyMove(move, state);
+					if (newState) { 
+						moveStates.push({move: move, state: newState});
+						var hash = this.hash({player: player, state: newState.players});
+						hasData = hasData && (typeof plays[hash] !== 'undefined');
+						if (hasData) sum += plays[hash];
+					}
+					else keepGoing = true;
+				} else {
+					break;
+				}
+			}
 
 			if (!moveStates.length) {
 				console.log('no legal moves');
@@ -163,8 +171,8 @@ class MonteCarlo {
 				var logTotal = Math.log(sum);
 				var max = 0;
 				moveStates.forEach(function(ms) {
-					var hash = hashFunc({player: player, state: ms.state.players});
-					var x = (wins[hash].count / plays[hash].count) + this.c * Math.sqrt(logTotal / plays[hash].count);
+					var hash = this.hash({player: player, state: ms.state.players});
+					var x = (wins[hash] / plays[hash]) + this.c * Math.sqrt(logTotal / plays[hash]);
 					if (x > max) {
 						max = x;
 						move = ms.move;
@@ -180,14 +188,15 @@ class MonteCarlo {
 
 			statesCopy.push(state);
 
-			var hash = hashFunc({player: player, state: state.players});
-			if (expand && !plays[hash]) {
+			var hash = this.hash({player: player, state: state.players});
+			if (expand && (typeof plays[hash] === 'undefined')) {
+				console.log('ecpand');
 				expand = false;
-				plays[hash] = {count: 0};
-				wins[hash] = {count: 0};
+				plays[hash] = 0;
+				wins[hash] = 0;
 			}
 
-			visitedStates[hash] = {player: player};
+			visitedStates[hash] = player;
 			
 			console.log('checking winner');
 			player = this.game.currentPlayer(state);
@@ -199,10 +208,10 @@ class MonteCarlo {
 
 		for (var ps in visitedStates) {
 		    if (visitedStates.hasOwnProperty(ps)) {
-		        if (!!plays[ps]) {
-		        	plays[ps].count += 1;
-		        	if (visitedStates[ps].player === winner) {
-		        		wins[ps].count += 1;
+		        if (typeof plays[ps] !== 'undefined') {
+		        	plays[ps] += 1;
+		        	if (visitedStates[ps] === winner) {
+		        		wins[ps] += 1;
 		        	} 
 		        }
 		    }

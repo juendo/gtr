@@ -1114,85 +1114,62 @@ var actions = {
       var data = angular.toJson({name: player.name, move: move, game: this.visibleState(game)});
     }
 
-    var newState = false;
+    var a = this;
 
-    switch (move.kind) {
-      case 'Refill': 
-        newState = this.think(player, game);
-        break;
-      case 'Draw One':
-        newState = this.drawOne(player, game);
-        break;
-      case 'Take Jack':
-        newState = this.takeJack(player, game);
-        break;
-      case 'Vomitorium':
-        newState = this.vomitorium(player, game.pool, game);
-        break;
-      case 'Lead':
-        newState = this.lead(player, game, {card:{name: '', color: move.role}}, player.actions[0], move.cards);
-        break;
-      case 'Patron':
-        newState = this.patron(player, move.color, game.pool, null, player.actions[0], game);
-        break;
-      case 'Aqueduct':
-        newState = this.patron(player, null, null, move.data, player.actions[0], game);
-        break;
-      case 'Bar':
-        newState = this.patron(player, null, null, {deck: game.deck, game: game}, player.actions[0], game);
-        break;
-      case 'Merchant':
-        newState = this.merchant(player, move.data, player.actions[0], game);
-        break;
-      case 'Atrium':
-        newState = this.merchant(player, {deck: game.deck, game: game}, player.actions[0], game);
-        break;
-      case 'Basilica':
-        newState = this.merchant(player, move.data, player.actions[0], game);
-        break;
-      case 'Laborer':
-        newState = this.laborer(player, move.color, game.pool, null, player.actions[0], game);
-        break;
-      case 'Dock':
-        newState = this.laborer(player, null, null, move.data, player.actions[0], game);
-        break;
-      case 'Fill from Hand':
-        newState = this.fillStructureFromHand(player.buildings[move.building], player, move.data, game, player.actions[0]);
-        break;
-      case 'Fill from Stockpile':
-        newState = this.fillStructureFromStockpile(game.players[move.player].buildings[move.building], player, move.data, game, player.actions[0]);
-        break;
-      case 'Fill from Pool':
-        newState = this.fillStructureFromPool(game.players[move.player].buildings[move.building], player, move.color, game, player.actions[0]);
-        break;
-      case 'Lay':
-        newState = this.prepareToLay(player, move.color, game, player.actions[0], move.index);
-        break;
-      case 'Fountain':
-        newState = this.fountain(player, game.deck, game, player.actions[0]);
-        break;
-      case 'Follow':
-        newState = this.follow(player, game, {card:{name: '', color: player.actions[0].color}}, player.actions[0], move.cards);
-        break;
-      case 'Legionary':
-        newState = this.legionary(player, game, move.data, player.actions[0]);
-        break;
-      case 'Rome Demands':
-        newState = this.romeDemands(player, game, move.data, player.actions[0]);
-        break;
-      case 'Prison':
-        newState = this.prison(player, move.building, move.opponent, move.index, game);
-        break;
-      case 'Sewer':
-        newState = this.sewer(player, move.data, game);
-        break;
-      case 'Skip':
-        newState = this.useAction(player, game);
-        break;
-      default:
-        newState = false;
+    var newState = {
+      'Refill': 
+        function() { return a.think(player, game) },
+      'Draw One': 
+        function() { return a.drawOne(player, game) },
+      'Take Jack': 
+        function() { return a.takeJack(player, game) },
+      'Vomitorium': 
+        function() { return a.vomitorium(player, game.pool, game) },
+      'Lead': 
+        function() { return a.lead(player, game, {card:{name: '', color: move.role}}, player.actions[0], move.cards) },
+      'Patron': 
+        function() { return a.patron(player, move.color, game.pool, null, player.actions[0], game) },
+      'Aqueduct': 
+        function() { return a.patron(player, null, null, move.data, player.actions[0], game) },
+      'Bar': 
+        function() { return a.patron(player, null, null, {deck: game.deck, game: game}, player.actions[0], game) },
+      'Merchant': 
+        function() { return a.merchant(player, move.data, player.actions[0], game) },
+      'Atrium': 
+        function() { return a.merchant(player, {deck: game.deck, game: game}, player.actions[0], game) },
+      'Basilica': 
+        function() { return a.merchant(player, move.data, player.actions[0], game) },
+      'Laborer': 
+        function() { return a.laborer(player, move.color, game.pool, null, player.actions[0], game) },
+      'Dock': 
+        function() { return a.laborer(player, null, null, move.data, player.actions[0], game) },
+      'Fill from Hand': 
+        function() { return a.fillStructureFromHand(player.buildings[move.building], player, move.data, game, player.actions[0]) },
+      'Fill from Stockpile': 
+        function() { return a.fillStructureFromStockpile(game.players[move.player].buildings[move.building], player, move.data, game, player.actions[0]) },
+      'Fill from Pool': 
+        function() { return a.fillStructureFromPool(game.players[move.player].buildings[move.building], player, move.color, game, player.actions[0]) },
+      'Lay': 
+        function() { return a.prepareToLay(player, move.color, game, player.actions[0], move.index) },
+      'Fountain': 
+        function() { return a.fountain(player, game.deck, game, player.actions[0]) },
+      'Follow': 
+        function() { return a.follow(player, game, {card:{name: '', color: player.actions[0].color}}, player.actions[0], move.cards) },
+      'Legionary': 
+        function() { return a.legionary(player, game, move.data, player.actions[0]) },
+      'Rome Demands': 
+        function() { return a.romeDemands(player, game, move.data, player.actions[0]) },
+      'Prison': 
+        function() { return a.prison(player, move.building, move.opponent, move.index, game) },
+      'Sewer': 
+        function() { return a.sewer(player, move.data, game) },
+      'Skip': 
+        function() { return a.useAction(player, game) }
+    }[move.kind]();
+
+    if (newState) {
+      actions.checkIfGameOver(newState);
     }
-    if (newState) actions.checkIfGameOver(newState);
 
     // if move was valid, store it in the database
     if (typeof angular !== 'undefined' && newState) {
@@ -1200,6 +1177,31 @@ var actions = {
         data: data,
         type: "POST",
         contentType: "application/json" } );
+    }
+
+    if (typeof angular !== 'undefined' && newState && newState.finished) {
+      // get the winner's name
+      var winner = 0;
+      var maxScore = 0;
+      var maxHand = 0;
+      for (var i = 0; i < newState.players.length; i++) {
+        var p = newState.players[i];
+        if (p.winner) {
+          winner = i;
+          break;
+        } else if (this.score(p) >= maxScore && p.hand.length > maxHand) {
+          winner = i;
+          maxScore = this.score(p);
+          maxHand = p.hand.length;
+        }
+      }
+
+      // store winner in database
+      $.ajax( { url: "https://api.mlab.com/api/1/databases/moves/collections/winners?apiKey=B7VeiL13HNY2oYoAiedtMr6YNaxczG3f",
+        data: angular.toJson({room: newState.room, winner: newState.players[winner].name}),
+        type: "POST",
+        contentType: "application/json" } );
+
     }
 
     return newState;
