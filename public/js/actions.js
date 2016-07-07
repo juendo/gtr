@@ -358,6 +358,7 @@ var actions = {
     // check if any player meets the critera for a forum victory
     game.players.forEach(function(player) {
       player.merchantBonus = 0;
+      player.winner = false;
       if (this.meetsForumCriteria(player)) {
         game.finished = true;
         player.winner = true;
@@ -1226,7 +1227,8 @@ if (typeof angular !== 'undefined') angular.module('GTR').factory('actions', fun
             // a list of the actions the player has yet to use this turn
             actions: [],
             // the cards the player used to lead or follow
-            pending: []
+            pending: [],
+            publicBuildings: []
           }
         ],
       pool:

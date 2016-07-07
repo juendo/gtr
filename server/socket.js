@@ -6,7 +6,7 @@ module.exports = function (io) {
   return function(socket) {
     socket.on('update', function (data) {
       socket.join(data.game.room);
-      if (data.ai) {
+      if (data.ai && !data.game.finished) {
         setTimeout(function() {
           //var basic = require('../ai/basic');
           //data.move = basic(data, data.game.currentPlayer)[0];
@@ -18,7 +18,7 @@ module.exports = function (io) {
           if (gamesList.gamePlayers[data.game.room]) {
             delete gamesList.gamePlayers[data.game.room];
           }
-        }, 1000);
+        }, 100);
       } else {
         socket.broadcast.to(data.game.room).emit('change', data);
         if (gamesList.gamePlayers[data.game.room]) {

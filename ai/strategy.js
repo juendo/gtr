@@ -1,18 +1,19 @@
 exports.getWinner = function(game) {
-	var scores = [];
 	var actions = require('../public/js/actions.js');
+	var prev = game.finished;
+	game.finished = true;
+	actions.checkIfGameOver(game);
 
+	/**/
+	var scores = game.players.map(actions.score, actions);
+	
 	for (var i = 0; i < game.players.length; i++) {
 		var player = game.players[i];
-		var score = actions.influence(player);
-		score += 3 * player.vault.length;
-		score += 0.2 * player.stockpile.length;
+		scores[i] += 0.2 * player.stockpile.length;
 		player.buildings.forEach(function(building) {
-			score += building.done ? 0 : building.materials.length / actions.colorValues[building.siteColor] + 0.1;
+			scores[i] += building.done ? 0 : building.materials.length / actions.colorValues[building.siteColor] + 0.1;
 		});
-		score += 0.2 * player.clientele.length;
-		score += 0.1 * player.actions.length;
-		scores.push(score);
+		scores[i] += 0.2 * player.clientele.length;
 	}
 
 	var maxScore = 0;
@@ -23,5 +24,6 @@ exports.getWinner = function(game) {
 			winner = i;
 		}
 	}
+	game.finished = prev;
 	return winner;
 }

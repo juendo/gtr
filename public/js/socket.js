@@ -98,7 +98,7 @@ if (typeof io !== 'undefined') angular.module('GTR').factory('socket', function 
   // when you are accepted into an existing game
   socket.on('accepted', function(players) {
     $rootScope.game.players = players.map(function(name) {
-      return {name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], ai: name == 'AI'};
+      return {name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], publicBuildings: [], ai: name == 'AI'};
     });
     $rootScope.meta.you = players.length - 1;
     $rootScope.game.created = true;
@@ -106,11 +106,11 @@ if (typeof io !== 'undefined') angular.module('GTR').factory('socket', function 
 
   // when another player joins your game
   socket.on('joined', function(name) {
-    $rootScope.game.players.push({name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[]});
+    $rootScope.game.players.push({name:name,buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], publicBuildings: []});
   });
 
   socket.on('ai joined', function(name) {
-    $rootScope.game.players.push({name:'AI',buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], ai: true});
+    $rootScope.game.players.push({name:'AI',buildings:[],hand:[],stockpile:[],clientele:[],vault:[],actions:[],pending:[], publicBuildings: [], ai: true});
   });
 
   // if reconnecting, request missed data from server

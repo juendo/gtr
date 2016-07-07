@@ -1,10 +1,129 @@
 'use strict'
+var clone = function(game) {
+	var g = {};
+	g.turn = game.turn;
+	g.started = game.started;
+	g.created = game.created;
+	g.finished = game.finished;
+	g.room = game.room;
+	g.leader = game.leader;
+	g.currentPlayer = game.currentPlayer;
+	g.name = game.name;
+	g.glory = game.glory;
+	g.players = game.players.map(function(player) {
+		return {
+			name: player.name,
+			buildings: player.buildings.map(function(building) {
+				return {
+					name: building.name, 
+					color: building.color, 
+					done: building.done, 
+					materials: building.materials.map(function(material) {
+						return material;
+					}),
+					selected: building.selected, 
+					copy: building.copy,
+					siteColor: building.siteColor
+				}
+			}),
+            hand: player.hand.map(function(card) {
+            	return {
+            		name: card.name,
+            		color: card.color,
+            		done: card.done,
+            		materials: card.materials,
+            		selected: card.selected,
+            		copy: card.copy
+            	}
+            }),
+            stockpile: player.stockpile.map(function(material) {
+            	return material;
+            }),
+            clientele: player.clientele.map(function(client) {
+            	return client;
+            }),
+            vault: player.vault.map(function(material) {
+            	return {
+            		color: material.color,
+            		visibility: material.vsibility
+            	}
+            }),
+            // a list of the actions the player has yet to use this turn
+            actions: player.actions.map(function(action) {
+            	return {
+            		kind: action.kind,
+            		usedStairway: action.usedStairway,
+            		usedRegularArchitect: action.usedRegularArchitect,
+            		material: action.material,
+            		demander: action.demander,
+            		color: action.color,
+            		usedFountain: action.usedFountain,
+            		takenFromPool: action.takenFromPool,
+            		involvesBath: action.involvesBath,
+            		takenFromHand: action.takenFromHand,
+            		takenFromDeck: action.takenFromDeck,
+            		takenFromStockpile: action.takenFromStockpile
+            	}
+            }),
+            // the cards the player used to lead or follow
+            pending: player.pending.map(function(card) {
+            	return {
+            		name: card.name,
+            		color: card.color,
+            		done: card.done,
+            		materials: card.materials,
+            		selected: card.selected,
+            		copy: card.copy
+            	}
+            }),
+            madeDemand: player.madeDemand,
+            usedAcademy: player.usedAcademy,
+            publicBuildings: player.publicBuildings.map(function(name) {
+            	return name;
+            }),
+            merchantBonus: player.merchantBonus,
+            influenceModifier: player.influenceModifier,
+            winner: player.winner
+		}
+	}),
+	g.deck = game.deck.map(function(card) {
+		return {
+			name: card.name,
+			color: card.color,
+			done: card.done,
+			materials: card.materials,
+			selected: card.selected,
+			copy: card.copy
+		}
+	});
+	g.pool = {
+      'yellow': game.pool['yellow'],
+      'green': game.pool['green'],
+      'red': game.pool['red'],
+      'grey': game.pool['grey'],
+      'purple': game.pool['grey'],
+      'blue': game.pool['blue'],
+      // the number of jacks available
+      'black': game.pool['black']
+	},
+	g.sites = {
+      'yellow': game.sites['yellow'],
+      'green': game.sites['green'],
+      'red': game.sites['red'],
+      'grey': game.sites['grey'],
+      'purple': game.sites['grey'],
+      'blue': game.sites['blue'],
+      // the number of jacks available
+      'black': game.sites['black']
+	}
+	return g;
+}
 
 class GameState {
 
 	constructor(game) {
-		// make a new object
-		this.clone = require('clone');
+		
+		this.clone = clone;
 		this.game = this.clone(game);
 		this.actions = require('../public/js/actions.js');
 	}
@@ -55,7 +174,7 @@ class GameState {
 class MonteCarlo {
 
 	constructor(game) {
-		this.clone = require('clone');
+		this.clone = clone;
 
 		this.game = game;
 		this.states = [game.getState()];
@@ -82,7 +201,7 @@ class MonteCarlo {
 
 		var games = 0;
 		var begin = Date.now();
-		while (games < 40 && Date.now() - begin < 5000) {
+		while (games < 250 && Date.now() - begin < 5000) {
 			this.runSimulation();
 			games += 1;
 		}
@@ -125,8 +244,7 @@ class MonteCarlo {
 	runSimulation() {
 		console.log('starting new simulation')
 
-		var statesCopy = this.clone(this.states);
-		var state = statesCopy[statesCopy.length - 1];
+		var state = this.states[this.states.length - 1];
 		var visitedStates = {};
 		var expand = true;
 		var player = this.game.currentPlayer(state);
@@ -185,8 +303,6 @@ class MonteCarlo {
 				move = moveStates[rand].move;
 				state = moveStates[rand].state;
 			}
-
-			statesCopy.push(state);
 
 			var hash = this.hash({player: player, state: state.players});
 			if (expand && (typeof plays[hash] === 'undefined')) {

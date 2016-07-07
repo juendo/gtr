@@ -7,8 +7,7 @@ class BasicAI {
     // extract the VISIBLE information
 
     // the current player
-    var clone = require('clone');
-    var game = clone(data.game);
+    var game = data.game;
     this.game = game;
     this.player = this.game.players[this.game.currentPlayer];
     this.actions = require('../public/js/actions.js');
