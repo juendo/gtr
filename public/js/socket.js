@@ -1,3 +1,4 @@
+//comment
 angular.module('GTR', ['GTR.directives', 'ngDraggable']);
 
 if (typeof io !== 'undefined') angular.module('GTR').factory('socket', function ($rootScope, actions) {

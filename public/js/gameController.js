@@ -14,7 +14,7 @@ angular.module('GTR').controller('gtrController', function($scope, socket, actio
     else if (action == 'Merchant') 
       var move = {kind: 'Basilica', data: data};
 
-    else if (action == 'Lead' || action == 'Follow')
+    else if (action == 'Lead' || action == 'Follow' || (action == 'Think' && player.actions[0].skippable))
       data.card.selected = !data.card.selected;
     else if ((action == 'Craftsman' || action == 'Architect') && data.card.name != 'Jack') {
       if (data.card.selected && !player.actions[0].usedFountain) {

@@ -313,7 +313,7 @@ var actions = {
     var inf = 2;
     if (player.influenceModifier) inf += player.influenceModifier;
     player.buildings.forEach(function(building) {
-      if (building.done) {
+      if (building.done && !building.stolen) {
         inf += this.colorValues[building.siteColor];
       }
     }, this);
@@ -852,15 +852,25 @@ var actions = {
   },
 
   prison: function(player, building, opponent, index, game) {
+    // check if player has already layed that building
+    var different = true;
+    player.buildings.forEach(function(building) {
+      if (building.name == building.name) {
+        different = false;
+      }
+    }, this);
+    if (different == false) { return false };
+
     if (building.done) {
+      building.stolen = true;
       player.buildings.push(building);
-      if (!player.influenceModifier) player.influenceModifier = -3 - this.colorValues[building.siteColor];
-      else player.influenceModifier -= (3 + this.colorValues[building.siteColor]);
+      if (!player.influenceModifier) player.influenceModifier = -3;
+      else player.influenceModifier -= 3;
       opponent.buildings.splice(index, 1);
-      if (!opponent.influenceModifier) opponent.influenceModifier = 3 + this.colorValues[building.siteColor];
-      else opponent.influenceModifier += (3 + this.colorValues[building.siteColor]);
+      if (!opponent.influenceModifier) opponent.influenceModifier = 3 + (!building.stolen ? this.colorValues[building.siteColor] : 0);
+      else opponent.influenceModifier += (3 + (!building.stolen ? this.colorValues[building.siteColor] : 0));
     } 
-    return building.done ? this.useAction(player, game) : false;
+    return building.done ? this.skip(move, game, player) : false;
   },
 
   fountain: function(player, deck, game, action) {
