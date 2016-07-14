@@ -94,14 +94,15 @@ var actions = {
 
   hasAbilityToUse: function(building, player) {
     // check public buildings first
+    var hasGate = false;
     if (player.publicBuildings) {
       var isPublic = false;
       player.publicBuildings.forEach(function(pb) {
-        if (pb == building) isPublic = true;
+        if (pb === building) isPublic = true;
+        else if (pb === 'Gate') hasGate = true;
       });
       if (isPublic) return true;
     }
-    var hasGate = false;
     player.buildings.forEach(function(structure) {
       if (structure.done && structure.name == 'Gate') hasGate = true;
     }, this);
@@ -219,6 +220,7 @@ var actions = {
           });
           if (!containsIt) {
             p.publicBuildings.push(structure.name);
+            if (structure.name === 'CircusMaximus' && !player.doubledClients && player.pending.length) this.addClientActions(player, game.currentAction);
           } else {
             alreadyPublic = true;
           }
@@ -274,7 +276,7 @@ var actions = {
       }
       else if (structure.name == 'CircusMaximus'
             && player.pending.length > 0) {
-        this.addClientActions(player, actionType == 'Craftsman' ? 'green' : 'grey');
+        if (!player.doubledClients) this.addClientActions(player, game.currentAction);
       }
       else if (structure.name == 'Prison') {
         player.actions.splice(1, 0, {kind: 'Prison', description: 'STEAL BUILDING'});
@@ -518,6 +520,7 @@ var actions = {
     this.addClientActions(player, color);
     if (this.hasAbilityToUse('CircusMaximus', player)) {
       this.addClientActions(player, color);
+      player.doubledClients = true;
     }
     player.pending = selectedCards;
 
@@ -532,6 +535,7 @@ var actions = {
         player.hand.splice(i--, 1);
       }
     }
+    game.currentAction = color;
     return this.useAction(player, game);
   },
 
@@ -625,7 +629,7 @@ var actions = {
       // check if they have the stairway
       var stairway = this.hasAbilityToUse('Stairway', player);
 
-      return (stairway && !action.usedStairway) ? game : this.useAction(player, game);
+      return (stairway && !action.usedStairway && action.kind === 'Architect') ? game : this.useAction(player, game);
     } else {
       return false;
     }
@@ -854,23 +858,24 @@ var actions = {
   prison: function(player, building, opponent, index, game) {
     // check if player has already layed that building
     var different = true;
-    player.buildings.forEach(function(building) {
-      if (building.name == building.name) {
+    player.buildings.forEach(function(b) {
+      if (building.name === b.name) {
         different = false;
       }
     }, this);
     if (different == false) { return false };
 
     if (building.done) {
-      building.stolen = true;
       player.buildings.push(building);
+      if (building.name === 'CircusMaximus' && !player.doubledClients && player.pending.length) this.addClientActions(player, game.currentAction);
       if (!player.influenceModifier) player.influenceModifier = -3;
       else player.influenceModifier -= 3;
       opponent.buildings.splice(index, 1);
       if (!opponent.influenceModifier) opponent.influenceModifier = 3 + (!building.stolen ? this.colorValues[building.siteColor] : 0);
       else opponent.influenceModifier += (3 + (!building.stolen ? this.colorValues[building.siteColor] : 0));
+      building.stolen = true;
     } 
-    return building.done ? this.skip(move, game, player) : false;
+    return building.done ? this.useAction(player, game) : false;
   },
 
   fountain: function(player, deck, game, action) {
@@ -1009,6 +1014,7 @@ var actions = {
 
     // check for senates and pass on jacks
     for (var i = 0; i < game.players.length; i++) {
+      game.players[i].doubledClients = false;
       for (var j = 0; j < game.players[i].pending.length; j++) {
         if (game.players[i].pending[j].name == 'Jack') {
           for (var k = (i + 1) % game.players.length; k != i; k = (k + 1) % game.players.length) {

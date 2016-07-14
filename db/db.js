@@ -17,12 +17,13 @@ var findDocuments = function(db, callback) {
   // rename
   //moves.update({"game.room": "f57q7y"}, {$set: {winner: "Hendo"}}, {multi: true});
 
-  /*moves.mapReduce(queries.winning_buildings.map, queries.winning_buildings.reduce, {out: 'r2', query: {'move.kind': 'Lay'}});
-  db.collection('r2').aggregate([
+  moves.mapReduce(queries.layed.map, queries.layed.reduce, {out: 'layed', query: {'move.kind': 'Lay'}});
+
+  db.collection('layed').aggregate([
     {
       $group: {
         _id: {
-          name: "$_id.winning"
+          name: "$_id.name"
         },
         buildings: {
           $push: {
@@ -33,9 +34,9 @@ var findDocuments = function(db, callback) {
       }
     }
   ]).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});
-*/
+
   //moves.aggregate(queries.names).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});  
-  //moves.aggregate(queries.winning_moves).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});
+  //moves.aggregate(queries.layed).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});
 }
 
 // Use connect method to connect to the server
