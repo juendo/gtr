@@ -1200,13 +1200,13 @@ var actions = {
       // get the winner's name
       var winner = 0;
       var maxScore = 0;
-      var maxHand = 0;
+      var maxHand = -1;
       for (var i = 0; i < newState.players.length; i++) {
         var p = newState.players[i];
         if (p.winner) {
           winner = i;
           break;
-        } else if (this.score(p) >= maxScore && p.hand.length > maxHand) {
+        } else if (this.score(p) > maxScore || (this.score(p) === maxScore && p.hand.length > maxHand)) {
           winner = i;
           maxScore = this.score(p);
           maxHand = p.hand.length;

@@ -14,16 +14,17 @@ var findDocuments = function(db, callback) {
   // remove undesired names
   moves.remove(queries.delete_names);
 
+  //moves.update({name:"kmac"}, {$set: {name:"Kmac"}}, {multi:true});
   // rename
   //moves.update({"game.room": "f57q7y"}, {$set: {winner: "Hendo"}}, {multi: true});
 
-  moves.mapReduce(queries.layed.map, queries.layed.reduce, {out: 'layed', query: {'move.kind': 'Lay'}});
+  moves.mapReduce(queries.winning_buildings.map, queries.winning_buildings.reduce, {out: 'winning_buildings', query: {'move.kind': 'Lay'}});
 
-  db.collection('layed').aggregate([
+  db.collection('winning_buildings').aggregate([
     {
       $group: {
         _id: {
-          name: "$_id.name"
+          winning: "$_id.winning"
         },
         buildings: {
           $push: {
@@ -34,8 +35,15 @@ var findDocuments = function(db, callback) {
       }
     }
   ]).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});
-
-  //moves.aggregate(queries.names).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});  
+  
+  /*console.log(db.collection('winners').aggregate([]).toArray(function(err, docs) {
+    assert.equal(err, null);
+    docs.forEach(function(doc) {
+      console.log(doc.winner);
+      moves.update({"game.room": doc.room}, {$set: {winner: doc.winner}}, {multi: true});
+    })
+  }));*/
+  //moves.aggregate(queries.winning_moves).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});  
   //moves.aggregate(queries.layed).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});
 }
 
