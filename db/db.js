@@ -12,29 +12,57 @@ var findDocuments = function(db, callback) {
   // Find some documents
 
   // remove undesired names
-  moves.remove(queries.delete_names);
+  //moves.remove(queries.delete_names);
 
   //moves.update({name:"kmac"}, {$set: {name:"Kmac"}}, {multi:true});
   // rename
   //moves.update({"game.room": "f57q7y"}, {$set: {winner: "Hendo"}}, {multi: true});
 
-  moves.mapReduce(queries.winning_buildings.map, queries.winning_buildings.reduce, {out: 'winning_buildings', query: {'move.kind': 'Lay'}});
+ //console.log(queries.move_list.translateMove({kind: "Skip"}, {}));
 
-  db.collection('winning_buildings').aggregate([
+  //moves.mapReduce(queries.move_list.map, queries.move_list.reduce, {out: 'move_list'});
+
+  db.collection('ms').aggregate([]).toArray(function(err, docs) {
+    assert.equal(err, null);
+    console.log(JSON.stringify(docs));
+    callback(docs);
+  });
+  /*db.collection('move_list').aggregate([
     {
-      $group: {
-        _id: {
-          winning: "$_id.winning"
-        },
-        buildings: {
-          $push: {
-            name: "$_id.building",
-            count: "$value"
+      $project: {
+        move: '$_id.move',
+        value: '$value',
+        wins: {
+          $cond: {
+            if: '$_id.winning',
+            then: '$value',
+            else: 0
           }
         }
       }
+    },
+    {
+      $group: {
+        _id: {
+          move: '$_id.move'
+        },
+        winning: {
+          $sum: '$wins'
+        },
+        total: {
+          $sum: '$value'
+        }
+      }
+    },
+    {
+      $out: 'ms'
     }
-  ]).toArray(function(err, docs) {assert.equal(err, null);console.log("Found the following records");console.log(JSON.stringify(docs));callback(docs);});
+  ]).toArray(function(err, docs) {
+    assert.equal(err, null);
+    console.log("Found the following records");
+    console.log(JSON.stringify(docs));
+    callback(docs);
+  });*/
   
   /*console.log(db.collection('winners').aggregate([]).toArray(function(err, docs) {
     assert.equal(err, null);

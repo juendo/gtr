@@ -8,3 +8,4 @@ exports.rename_names = require('./rename_names.js');
 exports.layed = require('./layed.js');
 exports.winning_moves = require('./winning_moves.js');
 exports.winning_buildings = require('./winning_buildings');
+exports.move_list = require('./move_list');

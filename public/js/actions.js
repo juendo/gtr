@@ -555,6 +555,7 @@ var actions = {
       player.actions.push({kind: this.roles[color], description: this.roles[color].toUpperCase()});
       if (this.hasAbilityToUse('CircusMaximus', player)) {
         this.addClientActions(player, color);
+        player.doubledClients = true;
       }
       player.pending = selectedCards;
       for (var i = 0; i < player.hand.length; i++) {

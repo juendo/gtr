@@ -180,6 +180,7 @@ class MonteCarlo {
 		this.states = [game.getState()];
 		this.calcTime = 30;
 		this.hash = require('hash-object');
+		this.lookupDB = require('../db/frequency');
 		this.wins = {};
 		this.plays = {};
 		this.c = 1.4;
@@ -189,15 +190,50 @@ class MonteCarlo {
 		this.states.append(state);
 	}
 
-	getMove() {
+	start(callback) {
+		var legal = this.game.legalMoves(this.states[this.states.length - 1]);
+		this.accessDB(0, legal[0], this.states[this.states.length - 1], callback);
+	}
+
+	accessDB(index, move, state, callback) {
+		var player = this.game.currentPlayer(state);
+		var legal = this.game.legalMoves(state);
+		var newState = this.game.applyMove(move, state);
+		if (newState) { 
+			var hash = this.hash({player: player, state: newState.players});
+			var data = this.lookupDB(move, state, this, function(out, object) {
+				console.log('found the following');
+				console.log(out);
+				object.plays[hash] = 50;
+				object.wins[hash] = Math.floor(50 * out.wins / out.plays);
+				if (legal.length > ++index) return object.accessDB(index, legal[index], state, callback);
+				else return object.getMove(callback);
+			});
+		} else {
+			console.log('not a legal move');
+			if (legal.length > ++index) return this.accessDB(index, legal[index], state, callback);
+			else return this.getMove(callback);
+		}
+		
+	}
+
+	getMove(callback) {
 		this.maxDepth = 0;
 		var state = this.states[this.states.length - 1];
 		var player = this.game.currentPlayer(state);
 		var legal = this.game.legalMoves(state);
 
 		if (legal.length === 1) {
-			return legal[0];
+			return callback(legal[0]);
 		}
+
+		var moveStates = [];
+		legal.forEach(function(move) {
+			var newState = this.game.applyMove(move, state);
+			if (newState) { 
+				moveStates.push({move: move, state: newState});
+			}
+		}, this);
 
 		var games = 0;
 		var begin = Date.now();
@@ -205,12 +241,6 @@ class MonteCarlo {
 			this.runSimulation();
 			games += 1;
 		}
-
-		var moveStates = [];
-		legal.forEach(function(move) {
-			var newState = this.game.applyMove(move, state);
-			if (newState) moveStates.push({move: move, state: newState});
-		}, this);
 
 		console.log("Played number of games:");
 		console.log(games);
@@ -238,7 +268,7 @@ class MonteCarlo {
 			console.log({ move: ms.move, win: 100 * (typeof this.wins[hash] !== 'undefined' ? this.wins[hash] : 0 ) / (typeof this.plays[hash] !== 'undefined' ? this.plays[hash] : 1)});
 		}, this);
 
-		return winningMove;
+		return callback(winningMove);
 	}
 
 	runSimulation() {
@@ -310,9 +340,8 @@ class MonteCarlo {
 				expand = false;
 				plays[hash] = 0;
 				wins[hash] = 0;
+				visitedStates[hash] = player;
 			}
-
-			visitedStates[hash] = player;
 			
 			console.log('checking winner');
 			player = this.game.currentPlayer(state);
@@ -335,7 +364,7 @@ class MonteCarlo {
 	}
 }
 
-exports.getMove = function(game) {
+exports.getMove = function(game, callback) {
 	var monte = new MonteCarlo(new GameState(game));
-	return monte.getMove();
+	return monte.start(callback);
 }

@@ -6,7 +6,8 @@ module.exports = function(config) {
 
     plugins: [
         'karma-chrome-launcher',
-        'karma-jasmine'
+        'karma-jasmine',
+        'karma-coverage'
     ],
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -42,6 +43,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
+        'public/js/actions.js': 'coverage'
     },
 
 
@@ -79,6 +81,8 @@ module.exports = function(config) {
 
     // Concurrency level
     // how many browser should be started simultaneous
-    concurrency: Infinity
+    concurrency: Infinity,
+
+    reporters: ['coverage']
   })
 }
