@@ -2,8 +2,7 @@ var MongoClient = require('mongodb').MongoClient
   , assert = require('assert');
 
 // Connection URL
-var url = require('./password');
-if (!url) url = process.env.PASS;
+var url = process.env.PASS ? require('./password') : process.env.PASS;
 
 var findMove = function(db, callback, move) {
 
