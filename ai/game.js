@@ -140,6 +140,11 @@ class GameState {
 		return this.actions.applyMove(move, prevState);
 	}
 
+	applyMoveNoClone(move, game) {
+		// copy state
+		return this.actions.applyMove(move, game);
+	}
+
 	hasWinner(game) {
 		return game.finished;
 	}
@@ -282,6 +287,7 @@ class MonteCarlo {
 		var winner = -1;
 		var plays = this.plays;
 		var wins = this.wins;
+		var simulatedState = null;
 
 		for (var i = 0; i < 15; i++) {
 			console.log('picking next move')
@@ -294,7 +300,7 @@ class MonteCarlo {
 			for (var j = 0; j < legal.length; j++) {
 				var move = legal[j];
 				console.log('calculating possible game state');
-				if (hasData || keepGoing) {
+				if (expand && (hasData || keepGoing)) {
 					var newState = this.game.applyMove(move, state);
 					if (newState) { 
 						moveStates.push({move: move, state: newState});
@@ -308,13 +314,8 @@ class MonteCarlo {
 				}
 			}
 
-			if (!moveStates.length) {
-				console.log('no legal moves');
-				console.log(legal);
-			}
-
 			var move;
-			if (hasData) {
+			if (hasData && expand) {
 				console.log('all moves have data');
 				var logTotal = Math.log(sum);
 				var max = 0;
@@ -328,24 +329,31 @@ class MonteCarlo {
 					}
 				}, this);
 			} else {
-				console.log('not all moves have data');
-				var rand = Math.floor(Math.random() * moveStates.length);
-				move = moveStates[rand].move;
-				state = moveStates[rand].state;
+				simulatedState = simulatedState ? simulatedState : JSON.parse(JSON.stringify(state));
+				var newState = null;
+				while (!newState) {
+					var rand = Math.floor(Math.random() * legal.length);
+					move = legal[rand];
+					newState = this.game.applyMoveNoClone(move, simulatedState);
+				}
 			}
 
-			var hash = this.hash({player: player, state: state.players});
-			if (expand && (typeof plays[hash] === 'undefined')) {
-				console.log('ecpand');
-				expand = false;
-				plays[hash] = 0;
-				wins[hash] = 0;
+			if (expand) {
+				var hash = this.hash({player: player, state: state.players});
+				if (typeof plays[hash] === 'undefined') {
+					console.log('expand');
+					expand = false;
+					plays[hash] = 0;
+					wins[hash] = 0;
+				}
 				visitedStates[hash] = player;
 			}
+
+			var s = simulatedState ? simulatedState : state;
 			
 			console.log('checking winner');
-			player = this.game.currentPlayer(state);
-			winner = this.game.hasWinner(state) || (i >= 7 && state.players[originalPlayer].actions[0] && state.players[originalPlayer].actions[0].kind === 'Lead') || i === 29 ? this.game.winner(state) : -1;
+			player = this.game.currentPlayer(s);
+			winner = this.game.hasWinner(s) || (i >= 7 && s.players[originalPlayer].actions[0] && s.players[originalPlayer].actions[0].kind === 'Lead') || i === 29 ? this.game.winner(s) : -1;
 			if (winner !== -1) {
 				break;
 			}

@@ -83,12 +83,6 @@ if (typeof io !== 'undefined') angular.module('GTR').factory('socket', function 
     });
     if (shouldPlayNo) no.play();
 
-    // apply move if AI opponent moved, only for the player who created the game
-    if (data.move && $rootScope.meta.you == 0 && !data.game.finished) {
-      if (actions.applyMove(data.move, data.game)) {
-        update();
-      }
-    }
   });
 
   // when the game is first created

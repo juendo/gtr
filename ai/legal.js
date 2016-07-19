@@ -65,7 +65,7 @@ class BasicAI {
   follow() {
     var moves = [];
     for (var i = 0; i < this.player.hand.length; i++) {
-      moves.push({kind: 'Follow', cards: [i]});
+      if (this.player.actions[0].role === this.player.hand[i].color) moves.push({kind: 'Follow', cards: [i]});
     }
     moves.push({kind: 'Refill'});
     if (this.game.pool['black'] > 0) {
@@ -76,23 +76,27 @@ class BasicAI {
 
   patron() {
     var moves = [];
-    this.colors.forEach(function(color) {
-      if (this.game.pool[color]) {
-        moves.push({kind: 'Patron', color: color});
-      }
-    }, this);
+    if (this.actions.clienteleLimit(this.player) > this.player.clientele.length && !this.player.actions[0].takenFromPool) {
+      this.colors.forEach(function(color) {
+        if (this.game.pool[color] > 0) {
+          moves.push({kind: 'Patron', color: color});
+        }
+      }, this);
+    }
     moves.push({kind: 'Skip'});
     return moves;
   }
 
   merchant() {
     var moves = [];
-    var considered = {'yellow': false, 'green': false, 'red': false, 'grey': false, 'blue': false, 'purple': false};
-    for (var i = 0; i < this.player.stockpile.length; i++) {
-      // not checking vault limit
-      if (!considered[this.player.stockpile[i].color]) {
-        moves.push({kind: 'Merchant', data: {material: this.player.stockpile[i], index: i}});
-        considered[this.player.stockpile[i].color] = true;
+    if (this.actions.vaultLimit(this.player) > this.player.vault.length && !this.player.actions[0].takenFromStockpile) {
+      var considered = {'yellow': false, 'green': false, 'red': false, 'grey': false, 'blue': false, 'purple': false};
+      for (var i = 0; i < this.player.stockpile.length; i++) {
+        // not checking vault limit
+        if (!considered[this.player.stockpile[i].color]) {
+          moves.push({kind: 'Merchant', data: {material: this.player.stockpile[i], index: i}});
+          considered[this.player.stockpile[i].color] = true;
+        }
       }
     }
     moves.push({kind: 'Skip'});
@@ -101,11 +105,13 @@ class BasicAI {
 
   laborer() {
     var moves = [];
-    this.colors.forEach(function(color) {
-      if (this.game.pool[color]) {
-        moves.push({kind: 'Laborer', color: color});
-      }
-    }, this);
+    if (!this.player.actions[0].takenFromPool) {
+      this.colors.forEach(function(color) {
+        if (this.game.pool[color] > 0) {
+          moves.push({kind: 'Laborer', color: color});
+        }
+      }, this);
+    }
     moves.push({kind: 'Skip'});
     return moves;
   }
@@ -125,7 +131,15 @@ class BasicAI {
     }
     // check if can lay foundation
     for (var i = 0; i < this.player.hand.length; i++) {
-      moves.push({kind: 'Lay', index: i, color: this.player.hand[i].color});
+      if (this.player.hand[i].color !== 'black') {
+        if (this.game.sites[this.player.hand[i].color] > 6 - this.game.players.length) {
+          var alreadyHas = false;
+          this.player.buildings.forEach(function(b) {
+            if (b.name === this.player.hand[i].name) alreadyHas = true;
+          }, this);
+          if (!alreadyHas) moves.push({kind: 'Lay', index: i, color: this.player.hand[i].color});
+        }
+      }
     }
     moves.push({kind:'Skip'});
 
@@ -134,19 +148,29 @@ class BasicAI {
 
   architect() {
     var moves = [];
-    // check if can add anything to structures
-    for (var i = 0; i < this.player.stockpile.length; i++) {
-      for (var j = 0; j < this.player.buildings.length; j++) {
-        if (
-            this.player.stockpile[i] == this.player.buildings[j].siteColor
-        && !this.player.buildings[j].done) {
-          moves.push({kind: 'Fill from Stockpile', stockpile: i, building: j, data: {material: this.player.stockpile[i], index: i}, player: this.game.currentPlayer});
+    if (!this.player.actions[0].usedRegularArchitect) {
+      // check if can add anything to structures
+      for (var i = 0; i < this.player.stockpile.length; i++) {
+        for (var j = 0; j < this.player.buildings.length; j++) {
+          if (
+              this.player.stockpile[i] == this.player.buildings[j].siteColor
+          && !this.player.buildings[j].done) {
+            moves.push({kind: 'Fill from Stockpile', stockpile: i, building: j, data: {material: this.player.stockpile[i], index: i}, player: this.game.currentPlayer});
+          }
         }
       }
-    }
-    // check if can lay foundation
-    for (var i = 0; i < this.player.hand.length; i++) {
-      moves.push({kind: 'Lay', index: i, color: this.player.hand[i].color});
+      // check if can lay foundation
+      for (var i = 0; i < this.player.hand.length; i++) {
+        if (this.player.hand[i].color !== 'black') {
+          if (this.game.sites[this.player.hand[i].color] > 6 - this.game.players.length) {
+            var alreadyHas = false;
+            this.player.buildings.forEach(function(b) {
+              if (b.name === this.player.hand[i].name) alreadyHas = true;
+            }, this);
+            if (!alreadyHas) moves.push({kind: 'Lay', index: i, color: this.player.hand[i].color});
+          }
+        }
+      }
     }
     moves.push({kind:'Skip'});
 

@@ -445,7 +445,7 @@ var actions = {
   legionary: function(player, game, data, action) {
     var card = player.hand[data.index];
     if (card.selected || card.name === 'Jack') {
-      console.log('legionary returning false');
+      //console.log('legionary returning false');
       return false;
     }
     player.madeDemand = true;
@@ -482,7 +482,7 @@ var actions = {
       }
     }
     card.selected = true;
-    console.log('legionary returning true');
+    //console.log('legionary returning true');
     return this.useAction(player, game);
   },
 

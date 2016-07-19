@@ -7,9 +7,11 @@ module.exports = function (io) {
     socket.on('update', function (data) {
       socket.join(data.game.room);
       if (data.ai && !data.game.finished) {
+        socket.emit('change', data);
+        socket.broadcast.to(data.room).emit('change', data);
           //var basic = require('../ai/basic');
           //data.move = basic(data, data.game.currentPlayer)[0];
-        var ai = require('../ai/game.js');
+        /*var ai = require('../ai/game.js');
         ai.getMove(data.game, function(move) {
           data.move = move;
           socket.emit('change', data);
@@ -17,7 +19,19 @@ module.exports = function (io) {
           if (gamesList.gamePlayers[data.game.room]) {
             delete gamesList.gamePlayers[data.game.room];
           }
-        });
+        });*/
+        var createGame = require('../ai/g');
+        var game = createGame(data.game);
+        var ai = require('../ai/mcts');
+        data.move = ai.getMove(game, 200);
+        var actions = require('../public/js/actions');
+        actions.applyMove(data.move, data.game);
+        socket.emit('change', data);
+        socket.broadcast.to(data.room).emit('change', data);
+        if (gamesList.gamePlayers[data.game.room]) {
+          delete gamesList.gamePlayers[data.game.room];
+        }
+
       } else {
         socket.broadcast.to(data.game.room).emit('change', data);
         if (gamesList.gamePlayers[data.game.room]) {
