@@ -65,7 +65,7 @@ class BasicAI {
   follow() {
     var moves = [];
     for (var i = 0; i < this.player.hand.length; i++) {
-      if (this.player.actions[0].role === this.player.hand[i].color) moves.push({kind: 'Follow', cards: [i]});
+      if (this.player.actions[0].color === this.player.hand[i].color || this.player.hand[i].color === 'black') moves.push({kind: 'Follow', cards: [i]});
     }
     moves.push({kind: 'Refill'});
     if (this.game.pool['black'] > 0) {
