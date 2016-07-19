@@ -19,18 +19,19 @@ module.exports = function (io) {
             delete gamesList.gamePlayers[data.game.room];
           }
         });*/
-        var createGame = require('../ai/g');
-        var game = createGame(data.game);
-        var ai = require('../ai/mcts');
-        data.move = ai.getMove(game, 200);
-        var actions = require('../public/js/actions');
-        actions.applyMove(data.move, data.game);
-        socket.emit('change', data);
-        socket.broadcast.to(data.room).emit('change', data);
-        if (gamesList.gamePlayers[data.game.room]) {
-          delete gamesList.gamePlayers[data.game.room];
+        while (data.game.players[data.game.currentPlayer].ai) {
+          var createGame = require('../ai/g');
+          var game = createGame(data.game);
+          var ai = require('../ai/mcts');
+          data.move = ai.getMove(game, 200);
+          var actions = require('../public/js/actions');
+          actions.applyMove(data.move, data.game);
+          socket.emit('change', data);
+          socket.broadcast.to(data.room).emit('change', data);
+          if (gamesList.gamePlayers[data.game.room]) {
+            delete gamesList.gamePlayers[data.game.room];
+          }
         }
-
       } else {
         socket.broadcast.to(data.game.room).emit('change', data);
         if (gamesList.gamePlayers[data.game.room]) {
