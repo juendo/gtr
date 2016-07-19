@@ -19,7 +19,7 @@ module.exports = function (io) {
             delete gamesList.gamePlayers[data.game.room];
           }
         });*/
-        while (data.game.players[data.game.currentPlayer].ai) {
+        while (data.game.players[data.game.currentPlayer].ai && !data.game.finished) {
           var createGame = require('../ai/g');
           var game = createGame(data.game);
           var ai = require('../ai/mcts');
