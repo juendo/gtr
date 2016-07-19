@@ -7,7 +7,6 @@ module.exports = function (io) {
     socket.on('update', function (data) {
       socket.join(data.game.room);
       if (data.ai && !data.game.finished) {
-        socket.emit('change', data);
         socket.broadcast.to(data.room).emit('change', data);
           //var basic = require('../ai/basic');
           //data.move = basic(data, data.game.currentPlayer)[0];
