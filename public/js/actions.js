@@ -427,6 +427,7 @@ var actions = {
         pool[card.color]++;
       });
       player.actions[0].description = 'THINK';
+      player.actions[0].skippable = false;
       return game;
     }
     else return false;
@@ -889,6 +890,7 @@ var actions = {
       card.selected = true;
       player.hand.push(card);
       if (deck.length <= 0) game.finished = true;
+      return game;
     }
     return false;
   },
